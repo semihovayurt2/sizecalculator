@@ -1,5 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import SceneSelector from './SceneSelector';
+import { InputField } from './form/InputField';
+import { useStore } from '../store/useStore';
 
 interface HeaderProps {
   step: number;
@@ -13,6 +16,9 @@ const steps = [
 ];
 
 export function Header({ step, setStep }: HeaderProps) {
+  const config = useStore((s) => s.config);
+  const setConfig = useStore((s) => s.setConfig);
+
   return (
     <header className="w-full border-b border-border bg-background/50">
       <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-6 px-5 py-4">
@@ -24,8 +30,8 @@ export function Header({ step, setStep }: HeaderProps) {
           </div>
         </div>
 
-        <nav>
-          <ul className="flex items-center gap-6">
+        <nav className="flex-1">
+          <ul className="flex items-center gap-6 justify-center">
             {steps.map((s) => (
               <li key={s.id} className="relative">
                 <button
@@ -45,6 +51,23 @@ export function Header({ step, setStep }: HeaderProps) {
             ))}
           </ul>
         </nav>
+
+        <div className="ml-4 flex w-[520px] items-center gap-4">
+          <div className="w-44">
+            <SceneSelector />
+          </div>
+          <div className="flex gap-3">
+            <div className="w-28">
+              <InputField label="Genişlik (m)" value={config.width} onChange={(v) => setConfig({ width: Number(v) })} type="number" />
+            </div>
+            <div className="w-28">
+              <InputField label="Yükseklik (m)" value={config.height} onChange={(v) => setConfig({ height: Number(v) })} type="number" />
+            </div>
+            <div className="w-28">
+              <InputField label="Pitch (mm)" value={config.pixelPitch} onChange={(v) => setConfig({ pixelPitch: v })} />
+            </div>
+          </div>
+        </div>
       </div>
     </header>
   );
