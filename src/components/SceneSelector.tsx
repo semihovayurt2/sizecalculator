@@ -3,11 +3,13 @@ import { useStore } from '../store/useStore';
 
 type SceneMap = Record<string, any>;
 
+const normalizePath = (path: string) => path.replace(/\\/g, '/');
+
 export function SceneSelector() {
-  const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, as: 'json' }) as SceneMap;
+  const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, query: '?json' }) as SceneMap;
   const entries = Object.entries(scenes).map(([path, data]) => {
-    // path like '../assets/scenes/store/scene.json'
-    const parts = path.split('/');
+    const normalized = normalizePath(path);
+    const parts = normalized.split('/');
     const folder = parts[parts.length - 2];
     return { id: folder, meta: data };
   });
@@ -25,6 +27,9 @@ export function SceneSelector() {
           onChange={(e) => setSelected(e.target.value || null)}
         >
           <option value="">-- Sahne seçin --</option>
+          <option value="billboard-large" className="bg-[#0B0B0B] text-white">Büyük Billboard</option>
+          <option value="billboard-small" className="bg-[#0B0B0B] text-white">Küçük Billboard</option>
+          <option value="mobilcar" className="bg-[#0B0B0B] text-white">Mobil Araç</option>
           {entries.map((s) => (
             <option key={s.id} value={s.id} className="bg-[#0B0B0B] text-white">
               {s.meta.name ?? s.id}

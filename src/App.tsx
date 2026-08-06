@@ -1,12 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import Header from './components/Header';
 import { ProductTable } from './components/ProductTable';
-// SummaryPanel and TopologyDiagram removed from main layout per new UI
 import { PDFButton } from './components/PDFButton';
-import { LedScene } from './components/LedScene';
 import ScenePanel from './components/ScenePanel';
 
 function App() {
@@ -33,15 +29,7 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-[#FF7A00]/20 to-transparent" />
-              <div className="relative h-[720px] rounded-[28px] border border-white/5 bg-[#080808]/80">
-                <Canvas shadows camera={{ position: [0, 1.8, 6], fov: 40 }}>
-                  <ambientLight intensity={0.55} />
-                  <directionalLight castShadow intensity={1.1} position={[5, 8, 6]} shadow-mapSize={[2048, 2048]} />
-                  <Environment preset="studio" />
-                  <PerspectiveCamera makeDefault position={[0, 1.8, 6]} fov={40} />
-                  <OrbitControls enablePan enableZoom enableRotate minDistance={2.8} maxDistance={15} />
-                  <LedScene />
-                </Canvas>
+              <div className="relative h-[720px] rounded-[28px] border border-white/5 overflow-hidden">
                 <ScenePanel />
               </div>
             </motion.div>
