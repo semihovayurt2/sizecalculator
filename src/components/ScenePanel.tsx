@@ -1,6 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import { useStore } from '../store/useStore';
 import type { SceneMeta } from '../types';
+import { LedScene } from './LedScene';
 
 type SceneMap = Record<string, SceneMeta>;
 
@@ -13,8 +16,6 @@ export function ScenePanel() {
 
   const [meta, setMeta] = useState<SceneMeta | null>(null);
   const [bgUrl, setBgUrl] = useState<string | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!selected) {
@@ -38,16 +39,17 @@ export function ScenePanel() {
 
   return (
     <div className="absolute inset-0 pointer-events-none">
-      <div ref={containerRef} className="absolute inset-0 flex items-center justify-center p-6">
-        <div className="relative w-full h-full max-w-[1100px] max-h-[680px] mx-auto">
+      <div className="absolute inset-0 flex items-center justify-center p-6">
+        <div
+          className="relative w-full max-w-[1100px] mx-auto overflow-hidden rounded-[28px] border border-white/5 bg-[#080808]/80"
+          style={{ aspectRatio: '1200 / 700', maxHeight: '680px' }}
+        >
           <img
-            ref={imgRef}
             src={bgUrl}
             alt={meta.name}
-            className="w-full h-full object-contain rounded-lg border border-white/5"
+            className="absolute inset-0 h-full w-full object-cover"
           />
 
-          {/* Overlay LED placeholder */}
           <div
             className="absolute"
             style={{
@@ -55,34 +57,36 @@ export function ScenePanel() {
               top: `${(placeholder.y / 700) * 100}%`,
               width: `${(placeholder.width / 1200) * 100}%`,
               height: `${(placeholder.height / 700) * 100}%`,
-              transform: 'translate(-0%, -0%)',
-              pointerEvents: 'none',
+              transform: 'translate(0, 0)',
             }}
           >
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0 border-2 border-accent/70 bg-black/30" />
-              {/* LED rectangle scaled to config */}
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ pointerEvents: 'auto' }}
+            <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/20 bg-black/10 shadow-inner">
+              <Canvas
+                shadows
+                camera={{ position: [0, 1.8, 6], fov: 40 }}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: 'transparent' }}
               >
-                <div
-                  className="border border-white/30 bg-[#000000]/70"
-                  style={{
-                    width: `${Math.min(100, (config.width / (placeholder.width / 1000)) * 100)}%`,
-                    height: `${Math.min(100, (config.height / (placeholder.height / 1000)) * 100)}%`,
-                  }}
-                />
-              </div>
+                <ambientLight intensity={0.55} />
+                <directionalLight castShadow intensity={1.1} position={[5, 8, 6]} shadow-mapSize={[2048, 2048]} />
+                <Environment preset="studio" />
+                <PerspectiveCamera makeDefault position={[0, 1.8, 6]} fov={40} />
+                <OrbitControls enablePan enableZoom enableRotate minDistance={2.8} maxDistance={15} />
+                <LedScene />
+              </Canvas>
+              <div className="absolute inset-0 border-2 border-accent/70 pointer-events-none" />
             </div>
           </div>
 
-          {/* People silhouette */}
           <img
             src="/src/assets/people/people-silhouette.png"
             alt="people"
             className="absolute"
-            style={{ left: `${(meta.peoplePosition.x / 1200) * 100}%`, top: `${(meta.peoplePosition.y / 700) * 100}%`, width: `${meta.peoplePosition.scale ? meta.peoplePosition.scale * 100 : 100}px`, transform: 'translate(-50%, -100%)' }}
+            style={{
+              left: `${(meta.peoplePosition.x / 1200) * 100}%`,
+              top: `${(meta.peoplePosition.y / 700) * 100}%`,
+              width: `${meta.peoplePosition.scale ?? 100}px`,
+              transform: 'translate(-50%, -100%)',
+            }}
           />
         </div>
       </div>
