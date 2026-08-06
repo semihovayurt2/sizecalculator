@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700">
+  <rect width="1200" height="700" fill="#0B0B0B" />
+  <rect x="100" y="80" width="1000" height="200" fill="#0E0E0E" stroke="#2a2a2a" stroke-width="2" />
+  <text x="600" y="180" fill="#666" font-size="28" font-family="Arial" text-anchor="middle">BILLBOARD ALANI (PLACEHOLDER)</text>
+</svg>

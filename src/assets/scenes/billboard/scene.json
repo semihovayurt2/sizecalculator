@@ -1,0 +1,5 @@
+{
+  "name": "Billboard",
+  "placeholder": { "x": 100, "y": 80, "width": 1000, "height": 200 },
+  "peoplePosition": { "x": 200, "y": 620, "scale": 140 }
+}

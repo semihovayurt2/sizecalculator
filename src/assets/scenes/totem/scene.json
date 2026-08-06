@@ -1,0 +1,5 @@
+{
+  "name": "Totem",
+  "placeholder": { "x": 520, "y": 80, "width": 160, "height": 380 },
+  "peoplePosition": { "x": 560, "y": 620, "scale": 140 }
+}

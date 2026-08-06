@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700">
+  <rect width="1200" height="700" fill="#0D0D0D" />
+  <rect x="240" y="110" width="720" height="420" fill="#0B0B0B" stroke="#222" stroke-width="2" />
+  <text x="600" y="360" fill="#666" font-size="26" font-family="Arial" text-anchor="middle">BOŞ STÜDYO (PLACEHOLDER)</text>
+</svg>

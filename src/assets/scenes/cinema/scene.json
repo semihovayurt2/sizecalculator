@@ -1,0 +1,5 @@
+{
+  "name": "Sinema Salonu",
+  "placeholder": { "x": 180, "y": 120, "width": 840, "height": 360 },
+  "peoplePosition": { "x": 600, "y": 620, "scale": 140 }
+}

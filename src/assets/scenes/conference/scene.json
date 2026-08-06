@@ -1,0 +1,5 @@
+{
+  "name": "Konferans Salonu",
+  "placeholder": { "x": 220, "y": 140, "width": 760, "height": 300 },
+  "peoplePosition": { "x": 140, "y": 630, "scale": 120 }
+}

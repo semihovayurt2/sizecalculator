@@ -1,0 +1,5 @@
+{
+  "name": "Boş Stüdyo",
+  "placeholder": { "x": 240, "y": 110, "width": 720, "height": 420 },
+  "peoplePosition": { "x": 600, "y": 640, "scale": 140 }
+}

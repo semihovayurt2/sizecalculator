@@ -1,0 +1,5 @@
+{
+  "name": "Mağaza",
+  "placeholder": { "x": 330, "y": 180, "width": 540, "height": 160 },
+  "peoplePosition": { "x": 200, "y": 640, "scale": 120 }
+}
