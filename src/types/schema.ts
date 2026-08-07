@@ -4,6 +4,10 @@ export const inputSchema = z.object({
   projectName: z.string().min(2),
   clientName: z.string().min(2),
   description: z.string().min(5),
+  application: z.string().min(2),
+  unit: z.literal('cm'),
+  wallWidthCm: z.number().min(10),
+  wallHeightCm: z.number().min(10),
   environment: z.enum([
     'Sinema Salonu',
     'Konser Sahnesi',

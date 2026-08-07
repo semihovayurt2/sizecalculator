@@ -18,7 +18,7 @@ export function PDFButton() {
     <button
       type="button"
       onClick={handleExportPDF}
-      className="inline-flex items-center justify-center rounded-3xl bg-accent px-5 py-3 text-sm font-semibold text-black transition hover:bg-orange-500"
+      className="inline-flex items-center justify-center rounded-3xl bg-[#2dd4bf] px-5 py-3 text-sm font-semibold text-[#052d2a] transition hover:bg-[#34e0cc]"
     >
       Teklif PDF'i Oluştur
     </button>

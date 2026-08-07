@@ -2,6 +2,10 @@ export interface LEDConfig {
   projectName: string;
   clientName: string;
   description: string;
+  application: string;
+  unit: 'cm';
+  wallWidthCm: number;
+  wallHeightCm: number;
   environment:
     | 'Sinema Salonu'
     | 'Konser Sahnesi'

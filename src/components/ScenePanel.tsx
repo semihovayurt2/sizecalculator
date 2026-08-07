@@ -1,26 +1,68 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import type { SceneMeta } from '../types';
-import { LedScene } from './LedScene';
+import { PDFButton } from './PDFButton';
 
 type SceneMap = Record<string, SceneMeta>;
+
+const META_BASE_WIDTH = 1200;
+const META_BASE_HEIGHT = 700;
+const HUMAN_HEIGHT_CM = 180;
+const PEOPLE_BASE_HEIGHT_PX = 140;
+const RATIO_SNAP_EPSILON = 0.01;
+
+type SourceReference = {
+  sourceWidth: number;
+  sourceHeight: number;
+  placeholder: { x: number; y: number; width: number; height: number };
+};
+
+const CUSTOM_SOURCE_REFERENCES: Record<string, SourceReference> = {
+  'billboard-large': {
+    sourceWidth: 1536,
+    sourceHeight: 1024,
+    placeholder: { x: 182, y: 189, width: 1163, height: 588 },
+  },
+  billboard: {
+    sourceWidth: 1536,
+    sourceHeight: 1024,
+    placeholder: { x: 182, y: 189, width: 1163, height: 588 },
+  },
+  'billboard-small': {
+    sourceWidth: 1536,
+    sourceHeight: 1024,
+    placeholder: { x: 557, y: 43, width: 428, height: 812 },
+  },
+  store: {
+    sourceWidth: 1536,
+    sourceHeight: 1024,
+    placeholder: { x: 208, y: 129, width: 1123, height: 218 },
+  },
+  mobilcar: {
+    sourceWidth: 1536,
+    sourceHeight: 1024,
+    placeholder: { x: 419, y: 226, width: 916, height: 446 },
+  },
+  totem: {
+    sourceWidth: 1536,
+    sourceHeight: 1024,
+    placeholder: { x: 419, y: 226, width: 916, height: 446 },
+  },
+};
 
 export function ScenePanel() {
   const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, query: '?json' }) as SceneMap;
   const bgMap = import.meta.glob('../assets/scenes/*/background.svg', { eager: true, query: '?url' }) as Record<string, string>;
-  const cinemaImage = new URL('../../Sinema-Salonu.png', import.meta.url).href;
+  const cinemaImage = new URL('../../sahneler/Sinema-Salonu.png', import.meta.url).href;
+  const peopleImage = new URL('../../people-silhouette.png', import.meta.url).href;
 
   const selected = useStore((s) => s.selectedScene);
   const config = useStore((s) => s.config);
 
   const [meta, setMeta] = useState<SceneMeta | null>(null);
   const [bgUrl, setBgUrl] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const panelRef = useRef<HTMLDivElement | null>(null);
+  const [frameSize, setFrameSize] = useState({ width: META_BASE_WIDTH, height: META_BASE_HEIGHT });
+  const [viewportSize, setViewportSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
   const normalizePath = (path: string) => path.replace(/\\/g, '/');
 
@@ -53,6 +95,7 @@ export function ScenePanel() {
       store: new URL('../../sahneler/bilboard-shop.jpeg', import.meta.url).href,
       mobilcar: new URL('../../sahneler/mobilcar-screen.jpeg', import.meta.url).href,
       totem: new URL('../../sahneler/mobilcar-screen.jpeg', import.meta.url).href,
+      studio: new URL('../../sahneler/depo-screen.avif', import.meta.url).href,
     };
 
     if (selected === 'cinema') {
@@ -66,81 +109,142 @@ export function ScenePanel() {
     }
   }, [selected]);
 
+  useEffect(() => {
+    if (!bgUrl) {
+      setFrameSize({ width: META_BASE_WIDTH, height: META_BASE_HEIGHT });
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => {
+      const width = image.naturalWidth || META_BASE_WIDTH;
+      const height = image.naturalHeight || META_BASE_HEIGHT;
+      setFrameSize({ width, height });
+    };
+    image.src = bgUrl;
+  }, [bgUrl]);
+
+  useEffect(() => {
+    const updateViewportSize = () => {
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    updateViewportSize();
+    window.addEventListener('resize', updateViewportSize);
+
+    return () => window.removeEventListener('resize', updateViewportSize);
+  }, []);
+
   if (!meta || !bgUrl) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center text-white/40">Sahne seçilmedi.</div>
+      <div className="flex min-h-[420px] items-center justify-center text-white/40">Sahne seçilmedi.</div>
     );
   }
 
-  const placeholder = meta.placeholder;
+  const placeholderRef = CUSTOM_SOURCE_REFERENCES[selected ?? ''];
+  const activeFrameWidth = frameSize.width;
+  const activeFrameHeight = frameSize.height;
 
-  const panelLeft = dragOffset.x;
-  const panelTop = dragOffset.y;
+  const placeholder = placeholderRef
+    ? placeholderRef.placeholder
+    : {
+        x: meta.placeholder.x * (activeFrameWidth / META_BASE_WIDTH),
+        y: meta.placeholder.y * (activeFrameHeight / META_BASE_HEIGHT),
+        width: meta.placeholder.width * (activeFrameWidth / META_BASE_WIDTH),
+        height: meta.placeholder.height * (activeFrameHeight / META_BASE_HEIGHT),
+      };
+
+  const wallWidthM = Math.max(0.1, config.wallWidthCm / 100);
+  const wallHeightM = Math.max(0.1, config.wallHeightCm / 100);
+  const columns = Math.max(1, Math.round(config.width / config.cabinetWidth));
+  const rows = Math.max(1, Math.round(config.height / config.cabinetHeight));
+
+  const widthRatio = config.width / wallWidthM;
+  const heightRatio = config.height / wallHeightM;
+
+  const clampedWidthRatio = Math.min(Math.max(widthRatio, 0), 1);
+  const clampedHeightRatio = Math.min(Math.max(heightRatio, 0), 1);
+  const snappedWidthRatio = 1 - clampedWidthRatio <= RATIO_SNAP_EPSILON ? 1 : clampedWidthRatio;
+  const snappedHeightRatio = 1 - clampedHeightRatio <= RATIO_SNAP_EPSILON ? 1 : clampedHeightRatio;
+  const exceedsWall = widthRatio > 1 || heightRatio > 1;
+
+  const ledWidth = placeholder.width * snappedWidthRatio;
+  const ledHeight = placeholder.height * snappedHeightRatio;
+  const ledLeft = placeholder.x + (placeholder.width - ledWidth) / 2;
+  const ledTop = placeholder.y + (placeholder.height - ledHeight) / 2;
+  const gridCellWidthPercent = 100 / columns;
+  const gridCellHeightPercent = 100 / rows;
+  const frameAspectRatio = activeFrameWidth / activeFrameHeight;
+  const viewportAspectRatio = viewportSize.width / viewportSize.height;
+  const fittedFrameWidth = viewportAspectRatio > frameAspectRatio
+    ? viewportSize.height * frameAspectRatio
+    : viewportSize.width;
+  const fittedFrameHeight = viewportAspectRatio > frameAspectRatio
+    ? viewportSize.height
+    : viewportSize.width / frameAspectRatio;
+  const peopleCalibrationPx = meta.peoplePosition.scale ?? HUMAN_HEIGHT_CM;
+  const peopleHeightPx = Math.min(
+    ledHeight,
+    ledHeight * (peopleCalibrationPx / HUMAN_HEIGHT_CM) * (HUMAN_HEIGHT_CM / config.wallHeightCm),
+  );
+
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-0">
+    <div className="relative h-full w-full overflow-hidden bg-black">
       <div
-        className="relative w-full h-full overflow-hidden rounded-[28px]"
-        style={{ aspectRatio: '1200 / 700' }}
-        ref={panelRef}
+        className="absolute left-1/2 top-1/2"
+        style={{ width: `${fittedFrameWidth}px`, height: `${fittedFrameHeight}px`, transform: 'translate(-50%, -50%)' }}
       >
-        <img
-          src={bgUrl}
-          alt={meta.name}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src={bgUrl} alt={meta.name} className="absolute inset-0 h-full w-full object-contain" />
 
         <div
-          className="absolute cursor-grab"
-          onMouseDown={(event) => {
-            setIsDragging(true);
-            dragStartRef.current = { x: event.clientX - panelLeft, y: event.clientY - panelTop };
-          }}
-          onMouseMove={(event) => {
-            if (!isDragging || !dragStartRef.current) return;
-            const nextX = event.clientX - dragStartRef.current.x;
-            const nextY = event.clientY - dragStartRef.current.y;
-            setDragOffset({ x: nextX, y: nextY });
-          }}
-          onMouseUp={() => {
-            setIsDragging(false);
-            dragStartRef.current = null;
-          }}
-          onMouseLeave={() => {
-            setIsDragging(false);
-            dragStartRef.current = null;
-          }}
+          className="absolute inset-0"
           style={{
-            left: panelLeft,
-            top: panelTop,
-            width: `${(placeholder.width / 1200) * 100}%`,
-            height: `${(placeholder.height / 700) * 100}%`,
+            width: '100%',
+            height: '100%',
           }}
         >
-          <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/20 bg-black/20 shadow-inner">
-            <Canvas
-              shadows
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: 'transparent' }}
+          <div className="relative h-full w-full overflow-hidden">
+            <div
+              className={`absolute border ${exceedsWall ? 'border-red-400' : 'border-white/30'} bg-[#0D0F12]`}
+              style={{
+                left: `${(ledLeft / activeFrameWidth) * 100}%`,
+                top: `${(ledTop / activeFrameHeight) * 100}%`,
+                width: `${(ledWidth / activeFrameWidth) * 100}%`,
+                height: `${(ledHeight / activeFrameHeight) * 100}%`,
+                backgroundImage:
+                  'linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)',
+                backgroundSize: `${gridCellWidthPercent}% 100%, 100% ${gridCellHeightPercent}%`,
+                backgroundPosition: '0 0, 0 0',
+              }}
             >
-              <ambientLight intensity={0.55} />
-              <directionalLight castShadow intensity={1.1} position={[5, 8, 6]} shadow-mapSize={[2048, 2048]} />
-              <Environment preset="studio" />
-              <OrthographicCamera makeDefault position={[0, 1.8, 6]} zoom={120} />
-              <OrbitControls enableRotate={false} enablePan={false} enableZoom={true} zoomSpeed={0.6} />
-              <LedScene />
-            </Canvas>
-            <div className="absolute inset-0 border-2 border-accent/70 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/35" />
+            </div>
+
+            <div className="absolute left-4 top-1/2 z-20 -translate-y-1/2 space-y-2 text-left text-xs leading-tight text-orange-300">
+              <div className="font-semibold text-orange-200">Duvar: {config.wallWidthCm}cm x {config.wallHeightCm}cm</div>
+              <div>Ekran: {config.width.toFixed(2)}m x {config.height.toFixed(2)}m</div>
+              <div>Kolon: {columns}</div>
+              <div>Satır: {rows}</div>
+              <div>Pixel Pitch: {config.pixelPitch}</div>
+              {exceedsWall ? <div className="text-red-300">Ekran boyutu duvarı aşıyor.</div> : null}
+            </div>
+
+            <div className="absolute bottom-4 right-4 z-20">
+              <PDFButton />
+            </div>
           </div>
         </div>
 
         <img
-          src="/src/assets/people/people-silhouette.png"
+          src={peopleImage}
           alt="people"
           className="absolute"
           style={{
-            left: `${(meta.peoplePosition.x / 1200) * 100}%`,
-            top: `${(meta.peoplePosition.y / 700) * 100}%`,
-            width: `${meta.peoplePosition.scale ?? 100}px`,
+            left: `${(meta.peoplePosition.x / META_BASE_WIDTH) * 100}%`,
+            top: `${(meta.peoplePosition.y / META_BASE_HEIGHT) * 100}%`,
+            height: `${peopleHeightPx}px`,
+            width: 'auto',
             transform: 'translate(-50%, -100%)',
           }}
         />

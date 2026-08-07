@@ -12,17 +12,30 @@ interface StudioState {
   setSelectedScene?: (scene: string | null) => void;
 }
 
+const getPitchMeters = (pixelPitch: string): number => {
+  const sanitized = pixelPitch.trim().toUpperCase().replace('P', '').replace(',', '.');
+  const pitchMm = Number.parseFloat(sanitized);
+  if (!Number.isFinite(pitchMm) || pitchMm <= 0) {
+    return 0.0026;
+  }
+  return pitchMm / 1000;
+};
+
 const defaultConfig: LEDConfig = {
   projectName: 'Premium LED Projesi',
   clientName: 'ABC Etkinlik',
   description: 'Sinema salonu ekranı için deneysel 3D kurulum.',
+  application: 'Indoor commercial',
+  unit: 'cm',
+  wallWidthCm: 300,
+  wallHeightCm: 200,
   environment: 'Sinema Salonu',
   type: 'Indoor',
   pixelPitch: 'P2.6',
   series: 'S-4000',
   cabinetModel: 'CAB-1000',
-  cabinetWidth: 0.5,
-  cabinetHeight: 0.5,
+  cabinetWidth: 0.32,
+  cabinetHeight: 0.16,
   mountType: 'Wall',
   width: 6,
   height: 3,
@@ -30,8 +43,9 @@ const defaultConfig: LEDConfig = {
 };
 
 const calculateSummary = (config: LEDConfig): SummaryData => {
+  const pitchMeters = getPitchMeters(config.pixelPitch);
   const area = config.width * config.height;
-  const totalPixels = Math.round((config.width / 0.0026) * (config.height / 0.0026));
+  const totalPixels = Math.round((config.width / pitchMeters) * (config.height / pitchMeters));
   const horizontalCabinets = Math.max(1, Math.round(config.width / config.cabinetWidth));
   const verticalCabinets = Math.max(1, Math.round(config.height / config.cabinetHeight));
   const totalCabinets = horizontalCabinets * verticalCabinets;
@@ -56,7 +70,7 @@ const calculateSummary = (config: LEDConfig): SummaryData => {
   return {
     area,
     totalPixels,
-    resolution: `${Math.round(config.width / 0.0026)} x ${Math.round(config.height / 0.0026)}`,
+    resolution: `${Math.round(config.width / pitchMeters)} x ${Math.round(config.height / pitchMeters)}`,
     horizontalCabinets,
     verticalCabinets,
     totalCabinets,

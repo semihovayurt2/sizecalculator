@@ -2,43 +2,46 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Header from './components/Header';
 import { ProductTable } from './components/ProductTable';
-import { PDFButton } from './components/PDFButton';
 import ScenePanel from './components/ScenePanel';
 
 function App() {
   const [step, setStep] = React.useState(1);
+  const [isProductPanelOpen, setIsProductPanelOpen] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-background text-text">
-      <Header step={step} setStep={setStep} />
-      <div className="mx-auto flex min-h-screen max-w-[1800px] gap-6 px-5 py-6 xl:px-10">
-        <main className="flex-1 space-y-6">
-          <section className="rounded-[40px] border border-border bg-card p-6 shadow-[0_40px_80px_rgba(2,6,23,0.04)]">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.35em] text-text">LED Screen Experience Studio</p>
-                <h1 className="mt-3 text-3xl font-semibold text-heading">Gerçek Zamanlı 3D LED Demo</h1>
-              </div>
-              <PDFButton />
-            </div>
+    <div className="min-h-screen bg-background text-text overflow-hidden">
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0">
+          <ScenePanel />
+        </div>
 
+        <Header step={step} setStep={setStep} />
+
+        <div className="pointer-events-none absolute inset-0 z-20">
+          <button
+            type="button"
+            onClick={() => setIsProductPanelOpen((value) => !value)}
+            className="pointer-events-auto absolute bottom-4 left-4 z-30 rounded-full bg-[#111111]/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition hover:bg-[#1a1a1a]"
+          >
+            {isProductPanelOpen ? 'Ürün Listesini Gizle' : 'Ürün Listesi'}
+          </button>
+
+          <motion.div
+            initial={false}
+            animate={isProductPanelOpen ? { opacity: 1, x: 0, y: 0, scale: 1 } : { opacity: 0, x: -28, y: 18, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+            className={`pointer-events-auto absolute bottom-4 left-4 w-[min(1200px,calc(100vw-2rem))] origin-bottom-left ${
+              isProductPanelOpen ? 'pointer-events-auto' : 'pointer-events-none'
+            }`}
+          >
             <motion.div
               layout
-              className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#090909]/95 p-6 shadow-glow"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
+              className="border border-white/10 bg-transparent p-4 shadow-none backdrop-blur-none"
             >
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-[#FF7A00]/20 to-transparent" />
-              <div className="relative h-[720px] rounded-[28px] border border-white/5 overflow-hidden">
-                <ScenePanel />
-              </div>
+              <ProductTable />
             </motion.div>
-          </section>
-
-          <section className="grid gap-6 xl:grid-cols-[0.92fr_0.88fr]">
-            <ProductTable />
-          </section>
-        </main>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
