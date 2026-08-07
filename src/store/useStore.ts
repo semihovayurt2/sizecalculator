@@ -97,7 +97,7 @@ export const useStore = create<StudioState>((set) => ({
   products: defaultProducts,
   topology: defaultTopology,
   summary: calculateSummary(defaultConfig),
-  selectedScene: null,
+  selectedScene: 'billboard-large',
   setConfig: (partial) =>
     set((state) => {
       const nextConfig = { ...state.config, ...partial };
