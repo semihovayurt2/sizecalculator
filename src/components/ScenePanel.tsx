@@ -10,6 +10,7 @@ const META_BASE_HEIGHT = 700;
 const HUMAN_HEIGHT_CM = 180;
 const PEOPLE_BASE_HEIGHT_PX = 140;
 const RATIO_SNAP_EPSILON = 0.01;
+const FRAME_ALLOWANCE_M = 0.04;
 
 type SourceReference = {
   sourceWidth: number;
@@ -21,32 +22,32 @@ const CUSTOM_SOURCE_REFERENCES: Record<string, SourceReference> = {
   'billboard-large': {
     sourceWidth: 1536,
     sourceHeight: 1024,
-    placeholder: { x: 182, y: 189, width: 1163, height: 588 },
+      placeholder: { x: 182, y: 216, width: 1163, height: 554 },
   },
   billboard: {
     sourceWidth: 1536,
     sourceHeight: 1024,
-    placeholder: { x: 182, y: 189, width: 1163, height: 588 },
+      placeholder: { x: 182, y: 216, width: 1163, height: 554 },
   },
   'billboard-small': {
     sourceWidth: 1536,
     sourceHeight: 1024,
-    placeholder: { x: 557, y: 43, width: 428, height: 812 },
+    placeholder: { x: 548, y: 111, width: 446, height: 752 },
   },
   store: {
     sourceWidth: 1536,
     sourceHeight: 1024,
-    placeholder: { x: 208, y: 129, width: 1123, height: 218 },
+     placeholder: { x: 188, y: 132, width: 1163, height: 190 },
   },
   mobilcar: {
     sourceWidth: 1536,
     sourceHeight: 1024,
-    placeholder: { x: 419, y: 226, width: 916, height: 446 },
+    placeholder: { x: 407, y: 216, width: 983, height: 458 },
   },
   totem: {
     sourceWidth: 1536,
     sourceHeight: 1024,
-    placeholder: { x: 419, y: 226, width: 916, height: 446 },
+    placeholder: { x: 407, y: 216, width: 983, height: 458 },
   },
 };
 
@@ -158,9 +159,11 @@ export function ScenePanel() {
   const wallHeightM = Math.max(0.1, config.wallHeightCm / 100);
   const columns = Math.max(1, Math.round(config.width / config.cabinetWidth));
   const rows = Math.max(1, Math.round(config.height / config.cabinetHeight));
+  const occupiedWidthM = config.width + FRAME_ALLOWANCE_M;
+  const occupiedHeightM = config.height + FRAME_ALLOWANCE_M;
 
-  const widthRatio = config.width / wallWidthM;
-  const heightRatio = config.height / wallHeightM;
+  const widthRatio = occupiedWidthM / wallWidthM;
+  const heightRatio = occupiedHeightM / wallHeightM;
 
   const clampedWidthRatio = Math.min(Math.max(widthRatio, 0), 1);
   const clampedHeightRatio = Math.min(Math.max(heightRatio, 0), 1);
@@ -172,6 +175,13 @@ export function ScenePanel() {
   const ledHeight = placeholder.height * snappedHeightRatio;
   const ledLeft = placeholder.x + (placeholder.width - ledWidth) / 2;
   const ledTop = placeholder.y + (placeholder.height - ledHeight) / 2;
+  const occupiedWidthCm = Math.max(1, occupiedWidthM * 100);
+  const occupiedHeightCm = Math.max(1, occupiedHeightM * 100);
+  const panelFrameThickness = Math.min(
+    Math.max(1, Math.min((ledWidth / occupiedWidthCm) * 2, (ledHeight / occupiedHeightCm) * 2)),
+    ledWidth / 2,
+    ledHeight / 2,
+  );
   const gridCellWidthPercent = 100 / columns;
   const gridCellHeightPercent = 100 / rows;
   const frameAspectRatio = activeFrameWidth / activeFrameHeight;
@@ -206,24 +216,31 @@ export function ScenePanel() {
         >
           <div className="relative h-full w-full overflow-hidden">
             <div
-              className={`absolute border ${exceedsWall ? 'border-red-400' : 'border-white/30'} bg-[#0D0F12]`}
+              className={`absolute ${exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
               style={{
                 left: `${(ledLeft / activeFrameWidth) * 100}%`,
                 top: `${(ledTop / activeFrameHeight) * 100}%`,
                 width: `${(ledWidth / activeFrameWidth) * 100}%`,
                 height: `${(ledHeight / activeFrameHeight) * 100}%`,
-                backgroundImage:
-                  'linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)',
-                backgroundSize: `${gridCellWidthPercent}% 100%, 100% ${gridCellHeightPercent}%`,
-                backgroundPosition: '0 0, 0 0',
+                padding: `${panelFrameThickness}px`,
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/35" />
+              <div
+                className={`relative h-full w-full overflow-hidden ${exceedsWall ? 'border border-red-300/80' : ''} bg-[#0D0F12]`}
+                style={{
+                  backgroundImage:
+                    'linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)',
+                  backgroundSize: `${gridCellWidthPercent}% 100%, 100% ${gridCellHeightPercent}%`,
+                  backgroundPosition: '0 0, 0 0',
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/35" />
+              </div>
             </div>
 
             <div className="absolute left-4 top-1/2 z-20 -translate-y-1/2 space-y-2 text-left text-xs leading-tight text-orange-300">
               <div className="font-semibold text-orange-200">Duvar: {config.wallWidthCm}cm x {config.wallHeightCm}cm</div>
-              <div>Ekran: {config.width.toFixed(2)}m x {config.height.toFixed(2)}m</div>
+              <div>Ekran: {occupiedWidthM.toFixed(2)}m x {occupiedHeightM.toFixed(2)}m</div>
               <div>Kolon: {columns}</div>
               <div>Satır: {rows}</div>
               <div>Pixel Pitch: {config.pixelPitch}</div>

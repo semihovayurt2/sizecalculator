@@ -18,6 +18,9 @@ const steps = [
 const pixelPitchOptions = ['P1', 'P1.25', 'P1.5', 'P1.86', 'P2', 'P2.5', 'P3', 'P4', 'P5'];
 const PANEL_WIDTH_CM = 32;
 const PANEL_HEIGHT_CM = 16;
+const FRAME_ALLOWANCE_CM = 4;
+const MIN_WALL_WIDTH_CM = PANEL_WIDTH_CM + FRAME_ALLOWANCE_CM;
+const MIN_WALL_HEIGHT_CM = PANEL_HEIGHT_CM + FRAME_ALLOWANCE_CM;
 const selectFieldClassName = 'h-10 w-full rounded-md border border-white/10 bg-[#111111] px-3 text-accent outline-none transition focus:border-[#2dd4bf]';
 
 interface StepperInputProps {
@@ -73,10 +76,14 @@ export function Header({ step, setStep }: HeaderProps) {
   const setConfig = useStore((s) => s.setConfig);
   const [isExpanded, setIsExpanded] = React.useState(false);
 
-  const columns = Math.max(1, Math.floor(config.wallWidthCm / PANEL_WIDTH_CM));
-  const rows = Math.max(1, Math.floor(config.wallHeightCm / PANEL_HEIGHT_CM));
+  const usableWallWidthCm = Math.max(0, config.wallWidthCm - FRAME_ALLOWANCE_CM);
+  const usableWallHeightCm = Math.max(0, config.wallHeightCm - FRAME_ALLOWANCE_CM);
+  const columns = Math.max(1, Math.floor(usableWallWidthCm / PANEL_WIDTH_CM));
+  const rows = Math.max(1, Math.floor(usableWallHeightCm / PANEL_HEIGHT_CM));
   const autoWidthM = Number(((columns * PANEL_WIDTH_CM) / 100).toFixed(2));
   const autoHeightM = Number(((rows * PANEL_HEIGHT_CM) / 100).toFixed(2));
+  const occupiedWidthM = Number((autoWidthM + FRAME_ALLOWANCE_CM / 100).toFixed(2));
+  const occupiedHeightM = Number((autoHeightM + FRAME_ALLOWANCE_CM / 100).toFixed(2));
 
   useEffect(() => {
     if (
@@ -161,16 +168,16 @@ export function Header({ step, setStep }: HeaderProps) {
                     <StepperInput
                       label="Wall Width"
                       value={config.wallWidthCm}
-                      min={10}
-                      step={10}
+                      min={MIN_WALL_WIDTH_CM}
+                      step={PANEL_WIDTH_CM}
                       suffix="cm"
                       onChange={(v) => setConfig({ wallWidthCm: v })}
                     />
                     <StepperInput
                       label="Wall Height"
                       value={config.wallHeightCm}
-                      min={10}
-                      step={10}
+                      min={MIN_WALL_HEIGHT_CM}
+                      step={PANEL_HEIGHT_CM}
                       suffix="cm"
                       onChange={(v) => setConfig({ wallHeightCm: v })}
                     />
@@ -222,7 +229,7 @@ export function Header({ step, setStep }: HeaderProps) {
                     <div>
                       <label className="mb-2 block text-sm font-semibold text-accent">Actual Size</label>
                       <div className="flex h-10 items-center px-3 font-medium text-accent">
-                        {config.width.toFixed(2)} m x {config.height.toFixed(2)} m
+                        {occupiedWidthM.toFixed(2)} m x {occupiedHeightM.toFixed(2)} m
                       </div>
                     </div>
                     <div>
