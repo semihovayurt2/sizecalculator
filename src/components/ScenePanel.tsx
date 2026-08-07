@@ -172,6 +172,19 @@ export function ScenePanel() {
     event.target.value = '';
   };
 
+  const clearPanelMedia = () => {
+    setPanelMedia((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev.url);
+      }
+      return null;
+    });
+
+    if (mediaInputRef.current) {
+      mediaInputRef.current.value = '';
+    }
+  };
+
   if (!meta || !bgUrl) {
     return (
       <div className="flex min-h-[420px] items-center justify-center text-white/40">Sahne seçilmedi.</div>
@@ -327,15 +340,28 @@ export function ScenePanel() {
         />
       </div>
 
-      <button
-        type="button"
-        className="fixed bottom-6 left-1/2 z-[80] flex h-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-md border border-white/45 bg-black/55 px-4 text-sm font-medium text-white shadow-lg transition hover:bg-black/70"
-        aria-label="Panel medyası yükle"
-        title="Resim veya video yükle"
-        onClick={() => mediaInputRef.current?.click()}
-      >
-        Medya Yukle
-      </button>
+      <div className="fixed bottom-6 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2">
+        <button
+          type="button"
+          className="flex h-10 cursor-pointer items-center justify-center rounded-md border border-white/45 bg-black/55 px-4 text-sm font-medium text-white shadow-lg transition hover:bg-black/70"
+          aria-label="Panel medyası yükle"
+          title="Resim veya video yükle"
+          onClick={() => mediaInputRef.current?.click()}
+        >
+          Medya Yukle
+        </button>
+
+        <button
+          type="button"
+          className="flex h-10 w-10 items-center justify-center rounded-md border border-red-300/70 bg-black/55 text-base font-semibold text-red-200 shadow-lg transition hover:bg-black/70 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Panel medyasını temizle"
+          title="Yuklenen medyayi kaldir"
+          onClick={clearPanelMedia}
+          disabled={!panelMedia}
+        >
+          X
+        </button>
+      </div>
     </div>
   );
 }

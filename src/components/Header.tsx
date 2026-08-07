@@ -16,12 +16,16 @@ const steps = [
 ];
 
 const pixelPitchOptions = ['P1', 'P1.25', 'P1.5', 'P1.86', 'P2', 'P2.5', 'P3', 'P4', 'P5'];
-const PANEL_WIDTH_CM = 32;
-const PANEL_HEIGHT_CM = 16;
 const FRAME_ALLOWANCE_CM = 4;
-const MIN_WALL_WIDTH_CM = PANEL_WIDTH_CM + FRAME_ALLOWANCE_CM;
-const MIN_WALL_HEIGHT_CM = PANEL_HEIGHT_CM + FRAME_ALLOWANCE_CM;
 const selectFieldClassName = 'h-10 w-full rounded-md border border-white/10 bg-[#111111] px-3 text-accent outline-none transition focus:border-[#2dd4bf]';
+const logoImage = new URL('../../logo.png', import.meta.url).href;
+
+const panelTypeOptions = [
+  { label: '320mm x 160mm', widthCm: 32, heightCm: 16 },
+  { label: '192mm x 192mm', widthCm: 19.2, heightCm: 19.2 },
+  { label: '256mm x 128mm', widthCm: 25.6, heightCm: 12.8 },
+  { label: '256mm x 256mm', widthCm: 25.6, heightCm: 25.6 },
+] as const;
 
 interface StepperInputProps {
   label: string;
@@ -76,30 +80,32 @@ export function Header({ step, setStep }: HeaderProps) {
   const setConfig = useStore((s) => s.setConfig);
   const [isExpanded, setIsExpanded] = React.useState(false);
 
+  const panelWidthCm = Number((config.cabinetWidth * 100).toFixed(1));
+  const panelHeightCm = Number((config.cabinetHeight * 100).toFixed(1));
+  const selectedPanelValue = `${panelWidthCm}x${panelHeightCm}`;
+  const minWallWidthCm = panelWidthCm + FRAME_ALLOWANCE_CM;
+  const minWallHeightCm = panelHeightCm + FRAME_ALLOWANCE_CM;
+
   const usableWallWidthCm = Math.max(0, config.wallWidthCm - FRAME_ALLOWANCE_CM);
   const usableWallHeightCm = Math.max(0, config.wallHeightCm - FRAME_ALLOWANCE_CM);
-  const columns = Math.max(1, Math.floor(usableWallWidthCm / PANEL_WIDTH_CM));
-  const rows = Math.max(1, Math.floor(usableWallHeightCm / PANEL_HEIGHT_CM));
-  const autoWidthM = Number(((columns * PANEL_WIDTH_CM) / 100).toFixed(2));
-  const autoHeightM = Number(((rows * PANEL_HEIGHT_CM) / 100).toFixed(2));
+  const columns = Math.max(1, Math.floor(usableWallWidthCm / panelWidthCm));
+  const rows = Math.max(1, Math.floor(usableWallHeightCm / panelHeightCm));
+  const autoWidthM = Number(((columns * panelWidthCm) / 100).toFixed(2));
+  const autoHeightM = Number(((rows * panelHeightCm) / 100).toFixed(2));
   const occupiedWidthM = Number((autoWidthM + FRAME_ALLOWANCE_CM / 100).toFixed(2));
   const occupiedHeightM = Number((autoHeightM + FRAME_ALLOWANCE_CM / 100).toFixed(2));
 
   useEffect(() => {
     if (
       config.width !== autoWidthM ||
-      config.height !== autoHeightM ||
-      config.cabinetWidth !== 0.32 ||
-      config.cabinetHeight !== 0.16
+      config.height !== autoHeightM
     ) {
       setConfig({
-        cabinetWidth: 0.32,
-        cabinetHeight: 0.16,
         width: autoWidthM,
         height: autoHeightM,
       });
     }
-  }, [autoHeightM, autoWidthM, config.cabinetHeight, config.cabinetWidth, config.height, config.width, setConfig]);
+  }, [autoHeightM, autoWidthM, config.height, config.width, setConfig]);
 
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-30">
@@ -110,7 +116,7 @@ export function Header({ step, setStep }: HeaderProps) {
         >
           <div className="flex items-center justify-between gap-4 bg-transparent px-5 py-3 shadow-none backdrop-blur-none">
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-accent/90 shadow-sm" />
+            <img src={logoImage} alt="Dinamo logo" className="h-10 w-10 rounded-md object-contain" />
             <div>
               <div className="text-sm font-semibold text-accent">LED Screen Experience Studio</div>
               <div className="text-xs text-orange-200/90">Profesyonel sahne tabanlı LED konfigüratörü</div>
@@ -170,16 +176,16 @@ export function Header({ step, setStep }: HeaderProps) {
                     <StepperInput
                       label="Wall Width"
                       value={config.wallWidthCm}
-                      min={MIN_WALL_WIDTH_CM}
-                      step={PANEL_WIDTH_CM}
+                      min={minWallWidthCm}
+                      step={panelWidthCm}
                       suffix="cm"
                       onChange={(v) => setConfig({ wallWidthCm: v })}
                     />
                     <StepperInput
                       label="Wall Height"
                       value={config.wallHeightCm}
-                      min={MIN_WALL_HEIGHT_CM}
-                      step={PANEL_HEIGHT_CM}
+                      min={minWallHeightCm}
+                      step={panelHeightCm}
                       suffix="cm"
                       onChange={(v) => setConfig({ wallHeightCm: v })}
                     />
@@ -229,10 +235,33 @@ export function Header({ step, setStep }: HeaderProps) {
                       <div className="flex h-10 items-center px-3 font-medium text-accent">{rows}</div>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Actual Size</label>
-                      <div className="flex h-10 items-center px-3 font-medium text-accent">
-                        {occupiedWidthM.toFixed(2)} m x {occupiedHeightM.toFixed(2)} m
-                      </div>
+                      <label className="mb-2 block text-sm font-semibold text-accent">Panel Type</label>
+                      <select
+                        value={selectedPanelValue}
+                        onChange={(e) => {
+                          const [nextWidth, nextHeight] = e.target.value.split('x').map(Number);
+                          if (!Number.isFinite(nextWidth) || !Number.isFinite(nextHeight)) {
+                            return;
+                          }
+
+                          const adjustedWallWidth = Math.max(config.wallWidthCm, nextWidth + FRAME_ALLOWANCE_CM);
+                          const adjustedWallHeight = Math.max(config.wallHeightCm, nextHeight + FRAME_ALLOWANCE_CM);
+
+                          setConfig({
+                            cabinetWidth: Number((nextWidth / 100).toFixed(3)),
+                            cabinetHeight: Number((nextHeight / 100).toFixed(3)),
+                            wallWidthCm: Number(adjustedWallWidth.toFixed(1)),
+                            wallHeightCm: Number(adjustedWallHeight.toFixed(1)),
+                          });
+                        }}
+                        className={selectFieldClassName}
+                      >
+                        {panelTypeOptions.map((panelType) => (
+                          <option key={`${panelType.widthCm}x${panelType.heightCm}`} value={`${panelType.widthCm}x${panelType.heightCm}`}>
+                            {panelType.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="mb-2 block text-sm font-semibold text-accent">Power Cable Routing Mode</label>
