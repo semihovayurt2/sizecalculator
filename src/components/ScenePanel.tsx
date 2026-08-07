@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import type { SceneMeta } from '../types';
 import { PDFButton } from './PDFButton';
@@ -62,8 +62,10 @@ export function ScenePanel() {
 
   const [meta, setMeta] = useState<SceneMeta | null>(null);
   const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [panelMedia, setPanelMedia] = useState<{ url: string; kind: 'image' | 'video' } | null>(null);
   const [frameSize, setFrameSize] = useState({ width: META_BASE_WIDTH, height: META_BASE_HEIGHT });
   const [viewportSize, setViewportSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const mediaInputRef = useRef<HTMLInputElement | null>(null);
 
   const normalizePath = (path: string) => path.replace(/\\/g, '/');
 
@@ -135,6 +137,43 @@ export function ScenePanel() {
 
     return () => window.removeEventListener('resize', updateViewportSize);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (panelMedia) {
+        URL.revokeObjectURL(panelMedia.url);
+      }
+    };
+  }, [panelMedia]);
+
+  const mediaInputId = 'panel-media-input';
+
+  const onMediaSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const kind: 'image' | 'video' | null = file.type.startsWith('image/')
+      ? 'image'
+      : file.type.startsWith('video/')
+        ? 'video'
+        : null;
+
+    if (!kind) {
+      event.target.value = '';
+      return;
+    }
+
+    const nextUrl = URL.createObjectURL(file);
+    setPanelMedia((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev.url);
+      }
+      return { url: nextUrl, kind };
+    });
+    event.target.value = '';
+  };
 
   if (!meta || !bgUrl) {
     return (
@@ -229,13 +268,40 @@ export function ScenePanel() {
                 className={`relative h-full w-full overflow-hidden ${exceedsWall ? 'border border-red-300/80' : ''} bg-[#0D0F12]`}
                 style={{
                   backgroundImage:
-                    'linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)',
+                    panelMedia
+                      ? 'none'
+                      : 'linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)',
                   backgroundSize: `${gridCellWidthPercent}% 100%, 100% ${gridCellHeightPercent}%`,
                   backgroundPosition: '0 0, 0 0',
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/35" />
+                {panelMedia ? (
+                  panelMedia.kind === 'video' ? (
+                    <video
+                      src={panelMedia.url}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      controls
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  ) : (
+                    <img src={panelMedia.url} alt="panel-media" className="absolute inset-0 h-full w-full object-cover" />
+                  )
+                ) : null}
+
+                <div className={`pointer-events-none absolute inset-0 ${panelMedia ? 'bg-black/10' : 'bg-gradient-to-b from-black/5 to-black/35'}`} />
               </div>
+
+              <label
+                htmlFor={mediaInputId}
+                className="absolute left-1/2 top-1/2 z-40 flex h-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-white/45 bg-black/30 px-4 text-sm font-medium text-white transition hover:bg-black/45"
+                aria-label="Panel medyası yükle"
+                title="Resim veya video yükle"
+              >
+                Medya Yukle
+              </label>
             </div>
 
             <div className="absolute left-4 top-1/2 z-20 -translate-y-1/2 space-y-2 text-left text-xs leading-tight text-orange-300">
@@ -264,6 +330,15 @@ export function ScenePanel() {
             width: 'auto',
             transform: 'translate(-50%, -100%)',
           }}
+        />
+
+        <input
+          id={mediaInputId}
+          ref={mediaInputRef}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={onMediaSelected}
         />
       </div>
     </div>
