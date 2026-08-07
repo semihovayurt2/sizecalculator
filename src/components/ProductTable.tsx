@@ -3,24 +3,38 @@ import { PDFButton } from './PDFButton';
 
 export function ProductTable() {
   const products = useStore((state) => state.products);
+  const summary = useStore((state) => state.summary);
+
+  const maxCurrentA = (summary.maximumPower * 1000) / 220;
+
+  const metrics = [
+    { label: 'Toplam Çözünürlük', value: summary.resolution },
+    { label: 'Toplam Pixel', value: summary.totalPixels.toLocaleString('tr-TR') },
+    { label: 'Max Güç (kW)', value: summary.maximumPower.toFixed(2) },
+    { label: 'Ort. Güç (kW)', value: summary.averagePower.toFixed(2) },
+    { label: 'Akım (A)', value: maxCurrentA.toFixed(2) },
+    { label: 'Toplam panel sayısı', value: summary.totalCabinets.toString() },
+  ];
 
   return (
     <div className="rounded-3xl border border-white/10 bg-transparent p-6 shadow-none">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-accent/80">Dinamik Ürün Listesi</p>
-          <h2 className="mt-3 text-2xl font-semibold text-accent">Malzeme & Kod</h2>
-        </div>
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="rounded-xl border border-white/10 bg-black/35 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-accent/75">{metric.label}</div>
+            <div className="mt-1 text-sm font-semibold text-accent/95">{metric.value}</div>
+          </div>
+        ))}
       </div>
       <div className="overflow-x-auto rounded-3xl border border-white/10 bg-black/65 backdrop-blur-sm">
-        <table className="min-w-full border-collapse text-left text-sm text-accent/90">
+        <table className="min-w-full border-collapse text-left text-sm text-accent/95">
           <thead>
             <tr className="bg-[#111111]">
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Ürün</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Model</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Kod</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Adet</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Ürün</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Model</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Kod</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Adet</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">
                 <div className="flex items-center justify-between gap-4">
                   <span>Açıklama</span>
                   <PDFButton compact />
@@ -35,7 +49,7 @@ export function ProductTable() {
                 <td className="px-5 py-4">{product.model}</td>
                 <td className="px-5 py-4">{product.code}</td>
                 <td className="px-5 py-4">{product.quantity}</td>
-                <td className="px-5 py-4 text-accent/75">{product.description}</td>
+                <td className="px-5 py-4 text-accent/90">{product.description}</td>
               </tr>
             ))}
           </tbody>

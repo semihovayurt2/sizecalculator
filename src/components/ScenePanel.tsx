@@ -340,7 +340,7 @@ export function ScenePanel() {
         />
       </div>
 
-      <div className="fixed bottom-6 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2">
+      <div className="fixed bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2">
         <button
           type="button"
           className="flex h-10 cursor-pointer items-center justify-center rounded-md border border-white/45 bg-black/55 px-4 text-sm font-medium text-white shadow-lg transition hover:bg-black/70"
