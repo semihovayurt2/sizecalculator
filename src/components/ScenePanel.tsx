@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import type { SceneMeta } from '../types';
-import { PDFButton } from './PDFButton';
 
 type SceneMap = Record<string, SceneMeta>;
 
@@ -146,8 +145,6 @@ export function ScenePanel() {
     };
   }, [panelMedia]);
 
-  const mediaInputId = 'panel-media-input';
-
   const onMediaSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -279,7 +276,7 @@ export function ScenePanel() {
                   panelMedia.kind === 'video' ? (
                     <video
                       src={panelMedia.url}
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-contain"
                       controls
                       autoPlay
                       loop
@@ -287,21 +284,13 @@ export function ScenePanel() {
                       playsInline
                     />
                   ) : (
-                    <img src={panelMedia.url} alt="panel-media" className="absolute inset-0 h-full w-full object-cover" />
+                    <img src={panelMedia.url} alt="panel-media" className="absolute inset-0 h-full w-full object-contain" />
                   )
                 ) : null}
 
                 <div className={`pointer-events-none absolute inset-0 ${panelMedia ? 'bg-black/10' : 'bg-gradient-to-b from-black/5 to-black/35'}`} />
               </div>
 
-              <label
-                htmlFor={mediaInputId}
-                className="absolute left-1/2 top-1/2 z-40 flex h-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-white/45 bg-black/30 px-4 text-sm font-medium text-white transition hover:bg-black/45"
-                aria-label="Panel medyası yükle"
-                title="Resim veya video yükle"
-              >
-                Medya Yukle
-              </label>
             </div>
 
             <div className="absolute left-4 top-1/2 z-20 -translate-y-1/2 space-y-2 text-left text-xs leading-tight text-orange-300">
@@ -313,16 +302,13 @@ export function ScenePanel() {
               {exceedsWall ? <div className="text-red-300">Ekran boyutu duvarı aşıyor.</div> : null}
             </div>
 
-            <div className="absolute bottom-4 right-4 z-20">
-              <PDFButton />
-            </div>
           </div>
         </div>
 
         <img
           src={peopleImage}
           alt="people"
-          className="absolute"
+          className="pointer-events-none absolute"
           style={{
             left: `${(meta.peoplePosition.x / META_BASE_WIDTH) * 100}%`,
             top: `${(meta.peoplePosition.y / META_BASE_HEIGHT) * 100}%`,
@@ -333,7 +319,6 @@ export function ScenePanel() {
         />
 
         <input
-          id={mediaInputId}
           ref={mediaInputRef}
           type="file"
           accept="image/*,video/*"
@@ -341,6 +326,16 @@ export function ScenePanel() {
           onChange={onMediaSelected}
         />
       </div>
+
+      <button
+        type="button"
+        className="fixed bottom-6 left-1/2 z-[80] flex h-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-md border border-white/45 bg-black/55 px-4 text-sm font-medium text-white shadow-lg transition hover:bg-black/70"
+        aria-label="Panel medyası yükle"
+        title="Resim veya video yükle"
+        onClick={() => mediaInputRef.current?.click()}
+      >
+        Medya Yukle
+      </button>
     </div>
   );
 }

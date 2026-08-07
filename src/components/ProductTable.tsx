@@ -1,4 +1,5 @@
 import { useStore } from '../store/useStore';
+import { PDFButton } from './PDFButton';
 
 export function ProductTable() {
   const products = useStore((state) => state.products);
@@ -19,7 +20,12 @@ export function ProductTable() {
               <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Model</th>
               <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Kod</th>
               <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Adet</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">Açıklama</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/60">
+                <div className="flex items-center justify-between gap-4">
+                  <span>Açıklama</span>
+                  <PDFButton compact />
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>

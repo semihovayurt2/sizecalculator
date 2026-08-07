@@ -10,9 +10,9 @@ interface HeaderProps {
 }
 
 const steps = [
-  { id: 1, label: '01 Senaryo Seçimi' },
-  { id: 2, label: '02 Ekran Yapılandırması' },
-  { id: 3, label: '03 Çıkış Yapılandırması' },
+  { id: 1, label: 'Senaryo Seçimi' },
+  { id: 2, label: 'Ekran Yapılandırması' },
+  { id: 3, label: 'Çıkış Yapılandırması' },
 ];
 
 const pixelPitchOptions = ['P1', 'P1.25', 'P1.5', 'P1.86', 'P2', 'P2.5', 'P3', 'P4', 'P5'];
@@ -106,7 +106,6 @@ export function Header({ step, setStep }: HeaderProps) {
       <div className="mx-auto max-w-[1800px] px-4 pt-4 sm:px-6 lg:px-10">
         <div
           className="pointer-events-auto"
-          onMouseEnter={() => setIsExpanded(true)}
           onMouseLeave={() => setIsExpanded(false)}
         >
           <div className="flex items-center justify-between gap-4 bg-transparent px-5 py-3 shadow-none backdrop-blur-none">
@@ -124,7 +123,10 @@ export function Header({ step, setStep }: HeaderProps) {
                 <li key={s.id} className="relative">
                   <button
                     type="button"
-                    onMouseEnter={() => setStep(s.id)}
+                    onMouseEnter={() => {
+                      setStep(s.id);
+                      setIsExpanded(true);
+                    }}
                     className={`px-3 py-2 text-sm font-semibold ${step === s.id ? 'text-[#2dd4bf]' : 'text-accent'}`}
                   >
                     {s.label}
