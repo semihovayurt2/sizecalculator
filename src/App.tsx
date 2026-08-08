@@ -21,9 +21,7 @@ function App() {
           <button
             type="button"
             onClick={() => setIsProductPanelOpen((value) => !value)}
-            className={`pointer-events-auto z-50 rounded-full bg-[#111111]/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition hover:bg-[#1a1a1a] ${
-              isProductPanelOpen ? 'fixed left-4 top-4' : 'absolute bottom-4 left-4'
-            }`}
+            className="pointer-events-auto absolute bottom-4 left-4 z-50 rounded-full bg-[#111111]/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition hover:bg-[#1a1a1a]"
           >
             {isProductPanelOpen ? 'Ürün Listesini Gizle' : 'Ürün Listesi'}
           </button>

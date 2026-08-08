@@ -18,7 +18,7 @@ const steps = [
 const pixelPitchOptions = ['P1', 'P1.25', 'P1.5', 'P1.86', 'P2', 'P2.5', 'P3', 'P4', 'P5'];
 const FRAME_ALLOWANCE_CM = 4;
 const selectFieldClassName = 'h-10 w-full rounded-md border border-white/10 bg-[#111111] px-3 text-accent outline-none transition focus:border-[#2dd4bf]';
-const logoImage = new URL('../../logo.png', import.meta.url).href;
+const logoImage = new URL('../../dinamoledlogotransparent-cropped.png', import.meta.url).href;
 
 const panelTypeOptions = [
   { label: '320mm x 160mm', widthCm: 32, heightCm: 16 },
@@ -116,11 +116,7 @@ export function Header({ step, setStep }: HeaderProps) {
         >
           <div className="flex items-center justify-between gap-4 bg-transparent px-5 py-3 shadow-none backdrop-blur-none">
           <div className="flex items-center gap-4">
-            <img src={logoImage} alt="Dinamo logo" className="h-10 w-10 rounded-md object-contain" />
-            <div>
-              <div className="text-sm font-semibold text-accent">LED Screen Experience Studio</div>
-              <div className="text-xs text-orange-200/90">Profesyonel sahne tabanlı LED konfigüratörü</div>
-            </div>
+            <img src={logoImage} alt="Dinamo logo" className="h-24 w-24 rounded-md object-contain" />
           </div>
 
           <nav className="flex-1">

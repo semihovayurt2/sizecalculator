@@ -10,7 +10,6 @@ const OPTIONS = [
   { id: 'billboard-small', label: 'Küçük Billboard' },
   { id: 'store', label: 'Mağaza' },
   { id: 'mobilcar', label: 'Mobil Araç' },
-  { id: 'cinema', label: 'Sinema Salonu' },
 ];
 
 export function SceneSelector({ light = false }: SceneSelectorProps) {

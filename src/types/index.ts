@@ -7,7 +7,6 @@ export interface LEDConfig {
   wallWidthCm: number;
   wallHeightCm: number;
   environment:
-    | 'Sinema Salonu'
     | 'Konser Sahnesi'
     | 'Tiyatro'
     | 'Konferans Salonu'

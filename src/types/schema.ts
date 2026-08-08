@@ -9,7 +9,6 @@ export const inputSchema = z.object({
   wallWidthCm: z.number().min(10),
   wallHeightCm: z.number().min(10),
   environment: z.enum([
-    'Sinema Salonu',
     'Konser Sahnesi',
     'Tiyatro',
     'Konferans Salonu',

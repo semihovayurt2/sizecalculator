@@ -53,7 +53,6 @@ const CUSTOM_SOURCE_REFERENCES: Record<string, SourceReference> = {
 export function ScenePanel() {
   const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, query: '?json' }) as SceneMap;
   const bgMap = import.meta.glob('../assets/scenes/*/background.svg', { eager: true, query: '?url' }) as Record<string, string>;
-  const cinemaImage = new URL('../../sahneler/Sinema-Salonu.png', import.meta.url).href;
   const peopleImage = new URL('../../people-silhouette.png', import.meta.url).href;
 
   const selected = useStore((s) => s.selectedScene);
@@ -100,9 +99,7 @@ export function ScenePanel() {
       studio: new URL('../../sahneler/depo-screen.avif', import.meta.url).href,
     };
 
-    if (selected === 'cinema') {
-      setBgUrl(cinemaImage);
-    } else if (customBackgrounds[selected as string]) {
+    if (customBackgrounds[selected as string]) {
       setBgUrl(customBackgrounds[selected as string]);
     } else if (bgKey) {
       setBgUrl((bgMap as any)[bgKey] as string);
@@ -306,15 +303,6 @@ export function ScenePanel() {
 
             </div>
 
-            <div className="absolute left-4 top-1/2 z-20 -translate-y-1/2 space-y-2 text-left text-xs leading-tight text-orange-300">
-              <div className="font-semibold text-orange-200">Duvar: {config.wallWidthCm}cm x {config.wallHeightCm}cm</div>
-              <div>Ekran: {occupiedWidthM.toFixed(2)}m x {occupiedHeightM.toFixed(2)}m</div>
-              <div>Kolon: {columns}</div>
-              <div>Satır: {rows}</div>
-              <div>Pixel Pitch: {config.pixelPitch}</div>
-              {exceedsWall ? <div className="text-red-300">Ekran boyutu duvarı aşıyor.</div> : null}
-            </div>
-
           </div>
         </div>
 
@@ -362,6 +350,7 @@ export function ScenePanel() {
           X
         </button>
       </div>
+
     </div>
   );
 }

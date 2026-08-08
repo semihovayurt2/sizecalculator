@@ -6,7 +6,6 @@ import { SelectField } from './form/SelectField';
 import SceneSelector from './SceneSelector';
 
 const environmentOptions = [
-  'Sinema Salonu',
   'Konser Sahnesi',
   'Tiyatro',
   'Konferans Salonu',
