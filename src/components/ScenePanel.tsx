@@ -328,26 +328,26 @@ export function ScenePanel() {
         />
       </div>
 
-      <div className="fixed bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2">
+      <div className="fixed bottom-36 right-2 z-50 flex w-[clamp(135px,12vw,190px)] items-center gap-1.5 sm:right-4 md:right-6 lg:right-8">
         <button
           type="button"
-          className="flex h-10 cursor-pointer items-center justify-center rounded-md border border-white/45 bg-black/55 px-4 text-sm font-medium text-white shadow-lg transition hover:bg-black/70"
+          className="pointer-events-auto flex h-8 flex-1 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-black/20 px-3 text-[11px] font-semibold text-cyan-100 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
           aria-label="Panel medyası yükle"
           title="Resim veya video yükle"
           onClick={() => mediaInputRef.current?.click()}
         >
-          Medya Yukle
+          Medya Yükle
         </button>
 
         <button
           type="button"
-          className="flex h-10 w-10 items-center justify-center rounded-md border border-red-300/70 bg-black/55 text-base font-semibold text-red-200 shadow-lg transition hover:bg-black/70 disabled:cursor-not-allowed disabled:opacity-40"
+          className="pointer-events-auto flex h-8 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[11px] font-semibold text-cyan-100 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Panel medyasını temizle"
-          title="Yuklenen medyayi kaldir"
+          title="Yüklenen medyayı kaldır"
           onClick={clearPanelMedia}
           disabled={!panelMedia}
         >
-          X
+          Sil
         </button>
       </div>
 

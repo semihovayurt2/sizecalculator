@@ -109,7 +109,7 @@ export function Header({ step, setStep }: HeaderProps) {
 
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-30">
-      <div className="mx-auto max-w-[1800px] px-4 pt-4 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[1800px] px-4 pt-0 sm:px-6 lg:px-10">
         <div
           className="pointer-events-auto"
           onMouseLeave={() => setIsExpanded(false)}

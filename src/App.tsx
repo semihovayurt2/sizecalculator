@@ -3,10 +3,18 @@ import { motion } from 'framer-motion';
 import Header from './components/Header';
 import { ProductTable } from './components/ProductTable';
 import ScenePanel from './components/ScenePanel';
+import { useStore } from './store/useStore';
 
 function App() {
   const [step, setStep] = React.useState(1);
   const [isProductPanelOpen, setIsProductPanelOpen] = React.useState(false);
+  const summary = useStore((state) => state.summary);
+
+  const formatNumber = (value: number, fractionDigits = 0) =>
+    new Intl.NumberFormat('tr-TR', {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
 
   return (
     <div className="min-h-screen bg-background text-text overflow-hidden">
@@ -18,6 +26,32 @@ function App() {
         <Header step={step} setStep={setStep} />
 
         <div className="pointer-events-none absolute inset-0 z-40">
+          <div className="pointer-events-none absolute bottom-4 right-2 z-50 w-[clamp(135px,12vw,190px)] rounded-xl border border-white/10 bg-black/20 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] sm:right-4 md:right-6 lg:right-8">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/80">Teknik Bilgi</p>
+            <div className="mt-1.5 space-y-1 text-[#7dd3fc]">
+              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                <span className="text-cyan-100/90">Ürün Çözünürlüğü</span>
+                <span className="text-right font-semibold">{summary.resolution} px</span>
+              </div>
+              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                <span className="text-cyan-100/90">Yatay Panel (Sütun)</span>
+                <span className="text-right font-semibold">{summary.horizontalCabinets}</span>
+              </div>
+              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                <span className="text-cyan-100/90">Dikey Panel (Satır)</span>
+                <span className="text-right font-semibold">{summary.verticalCabinets}</span>
+              </div>
+              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                <span className="text-cyan-100/90">Toplam Panel Sayısı</span>
+                <span className="text-right font-semibold">{summary.totalCabinets}</span>
+              </div>
+              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                <span className="text-cyan-100/90">Gerekli Elektrik Gücü</span>
+                <span className="text-right font-semibold">{formatNumber(summary.maximumPower, 2)} kW</span>
+              </div>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => setIsProductPanelOpen((value) => !value)}
