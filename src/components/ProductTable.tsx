@@ -20,21 +20,21 @@ export function ProductTable() {
     <div className="rounded-3xl border border-white/10 bg-transparent p-6 shadow-none">
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {metrics.map((metric) => (
-          <div key={metric.label} className="rounded-xl border border-white/10 bg-black/35 px-3 py-2">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-accent/75">{metric.label}</div>
-            <div className="mt-1 text-sm font-semibold text-accent/95">{metric.value}</div>
+          <div key={metric.label} className="rounded-xl border border-[#60a5fa]/70 bg-black/35 px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-blue-200/50">{metric.label}</div>
+            <div className="mt-1 text-sm font-semibold text-blue-200/90">{metric.value}</div>
           </div>
         ))}
       </div>
-      <div className="overflow-x-auto rounded-3xl border border-white/10 bg-black/65 backdrop-blur-sm">
-        <table className="min-w-full border-collapse text-left text-sm text-accent/95">
+      <div className="overflow-x-auto rounded-3xl border border-[#60a5fa]/70 bg-black/65 backdrop-blur-sm">
+        <table className="min-w-full border-collapse text-left text-sm text-blue-200/90">
           <thead>
             <tr className="bg-[#111111]">
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Ürün</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Model</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Kod</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">Adet</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-accent/75">
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Ürün</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Model</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Kod</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Adet</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">
                 <div className="flex items-center justify-between gap-4">
                   <span>Açıklama</span>
                   <PDFButton compact />
@@ -45,11 +45,11 @@ export function ProductTable() {
           <tbody>
             {products.map((product) => (
               <tr key={product.code} className="border-t border-white/10 hover:bg-white/5">
-                <td className="px-5 py-4 font-medium text-accent">{product.product}</td>
+                <td className="px-5 py-4 font-medium text-blue-200/90">{product.product}</td>
                 <td className="px-5 py-4">{product.model}</td>
                 <td className="px-5 py-4">{product.code}</td>
                 <td className="px-5 py-4">{product.quantity}</td>
-                <td className="px-5 py-4 text-accent/90">{product.description}</td>
+                <td className="px-5 py-4 text-blue-200/80">{product.description}</td>
               </tr>
             ))}
           </tbody>

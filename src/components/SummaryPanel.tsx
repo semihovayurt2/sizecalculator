@@ -30,15 +30,15 @@ export function SummaryPanel() {
     <div className="rounded-3xl border border-white/10 bg-[#111111]/80 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-white/40">Canlı Hesaplama</p>
-          <h2 className="mt-3 text-2xl font-semibold text-white">Teknik Özet</h2>
+          <p className="text-sm uppercase tracking-[0.3em] text-blue-200/40">Canlı Hesaplama</p>
+          <h2 className="mt-3 text-2xl font-semibold text-blue-200/90">Teknik Özet</h2>
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {summaryRows.map((row) => (
           <div key={row.key} className="rounded-3xl border border-white/10 bg-[#0D0D0D]/95 p-4">
-            <p className="text-xs uppercase tracking-[0.28em] text-white/40">{row.label}</p>
-            <p className="mt-3 text-lg font-semibold text-white">
+            <p className="text-xs uppercase tracking-[0.28em] text-blue-200/40">{row.label}</p>
+            <p className="mt-3 text-lg font-semibold text-blue-200/90">
               {summary[row.key as keyof typeof summary]}
               {row.suffix ?? ''}
             </p>

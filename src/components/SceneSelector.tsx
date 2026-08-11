@@ -39,14 +39,14 @@ export function SceneSelector({ light = false }: SceneSelectorProps) {
 
   return (
     <div ref={rootRef} className="relative z-40">
-      <label className="mb-2 block text-sm font-semibold text-accent">Sahne Seçimi</label>
+      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Sahne Seçimi</label>
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-white/10 bg-[#0b0b0b] px-3 text-accent shadow-none outline-none transition hover:bg-[#141414]"
+        className="flex h-10 w-full items-center justify-between rounded-md border border-white/10 bg-[#0b0b0b] px-3 text-blue-200/90 shadow-none outline-none transition hover:bg-[#141414]"
       >
         <span className="truncate text-left">{selectedLabel}</span>
-        <span className="ml-3 text-[#ff8a00]">⌄</span>
+        <span className="ml-3 text-blue-300/80">⌄</span>
       </button>
 
       <div
@@ -60,7 +60,7 @@ export function SceneSelector({ light = false }: SceneSelectorProps) {
             setSelected(null);
             setIsOpen(false);
           }}
-          className="block w-full px-3 py-3 text-left text-accent transition hover:bg-white/10"
+          className="block w-full px-3 py-3 text-left text-blue-200/90 transition hover:bg-white/10"
         >
           -- Sahne seçin --
         </button>
@@ -78,7 +78,7 @@ export function SceneSelector({ light = false }: SceneSelectorProps) {
               className={`mx-2 my-1 block w-[calc(100%-1rem)] rounded-md border px-3 py-3 text-left transition ${
                 isSelected
                   ? 'border-[#2dd4bf]/25 bg-[#173c37] text-[#2dd4bf]'
-                  : 'border-white/10 bg-[#111111] text-accent hover:bg-[#181818]'
+                  : 'border-white/10 bg-[#111111] text-blue-200/90 hover:bg-[#181818]'
               }`}
             >
               {option.label}

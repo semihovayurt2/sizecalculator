@@ -3,63 +3,24 @@ import { motion } from 'framer-motion';
 import Header from './components/Header';
 import { ProductTable } from './components/ProductTable';
 import ScenePanel from './components/ScenePanel';
-import { useStore } from './store/useStore';
 
 function App() {
   const [step, setStep] = React.useState(1);
   const [isProductPanelOpen, setIsProductPanelOpen] = React.useState(false);
-  const summary = useStore((state) => state.summary);
-
-  const formatNumber = (value: number, fractionDigits = 0) =>
-    new Intl.NumberFormat('tr-TR', {
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(value);
 
   return (
     <div className="min-h-screen bg-background text-text overflow-hidden">
       <div className="relative min-h-screen">
         <div className="absolute inset-0">
-          <ScenePanel />
+          <ScenePanel
+            isProductPanelOpen={isProductPanelOpen}
+            onToggleProductPanel={() => setIsProductPanelOpen((value) => !value)}
+          />
         </div>
 
         <Header step={step} setStep={setStep} />
 
         <div className="pointer-events-none absolute inset-0 z-40">
-          <div className="pointer-events-none absolute bottom-4 right-2 z-50 w-[clamp(135px,12vw,190px)] rounded-xl border border-white/10 bg-black/20 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] sm:right-4 md:right-6 lg:right-8">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/80">Teknik Bilgi</p>
-            <div className="mt-1.5 space-y-1 text-[#7dd3fc]">
-              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-                <span className="text-cyan-100/90">Ürün Çözünürlüğü</span>
-                <span className="text-right font-semibold">{summary.resolution} px</span>
-              </div>
-              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-                <span className="text-cyan-100/90">Yatay Panel (Sütun)</span>
-                <span className="text-right font-semibold">{summary.horizontalCabinets}</span>
-              </div>
-              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-                <span className="text-cyan-100/90">Dikey Panel (Satır)</span>
-                <span className="text-right font-semibold">{summary.verticalCabinets}</span>
-              </div>
-              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-                <span className="text-cyan-100/90">Toplam Panel Sayısı</span>
-                <span className="text-right font-semibold">{summary.totalCabinets}</span>
-              </div>
-              <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-                <span className="text-cyan-100/90">Gerekli Elektrik Gücü</span>
-                <span className="text-right font-semibold">{formatNumber(summary.maximumPower, 2)} kW</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsProductPanelOpen((value) => !value)}
-            className="pointer-events-auto absolute bottom-4 left-4 z-50 rounded-full bg-[#111111]/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition hover:bg-[#1a1a1a]"
-          >
-            {isProductPanelOpen ? 'Ürün Listesini Gizle' : 'Ürün Listesi'}
-          </button>
-
           <motion.div
             initial={false}
             animate={isProductPanelOpen ? { opacity: 1 } : { opacity: 0 }}
@@ -75,6 +36,14 @@ function App() {
               transition={{ type: 'spring', stiffness: 240, damping: 28 }}
               className="absolute inset-0 bg-black/62 backdrop-blur-[2px]"
             >
+              <button
+                type="button"
+                onClick={() => setIsProductPanelOpen(false)}
+                className="pointer-events-auto absolute bottom-4 left-4 z-50 w-[clamp(135px,12vw,190px)] rounded-xl border border-[#60a5fa]/70 bg-black/20 px-3 py-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30 sm:left-6 lg:left-8"
+              >
+                Kapat
+              </button>
+
               <div className="h-full w-full p-4 sm:p-6" onClick={(event) => event.stopPropagation()}>
                 <div className="h-full w-full rounded-3xl border border-white/10 bg-black/30 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
                   <div className="h-full overflow-y-auto">

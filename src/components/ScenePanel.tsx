@@ -50,13 +50,19 @@ const CUSTOM_SOURCE_REFERENCES: Record<string, SourceReference> = {
   },
 };
 
-export function ScenePanel() {
+interface ScenePanelProps {
+  isProductPanelOpen: boolean;
+  onToggleProductPanel: () => void;
+}
+
+export function ScenePanel({ isProductPanelOpen, onToggleProductPanel }: ScenePanelProps) {
   const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, query: '?json' }) as SceneMap;
   const bgMap = import.meta.glob('../assets/scenes/*/background.svg', { eager: true, query: '?url' }) as Record<string, string>;
   const peopleImage = new URL('../../people-silhouette.png', import.meta.url).href;
 
   const selected = useStore((s) => s.selectedScene);
   const config = useStore((s) => s.config);
+  const summary = useStore((s) => s.summary);
 
   const [meta, setMeta] = useState<SceneMeta | null>(null);
   const [bgUrl, setBgUrl] = useState<string | null>(null);
@@ -64,6 +70,12 @@ export function ScenePanel() {
   const [frameSize, setFrameSize] = useState({ width: META_BASE_WIDTH, height: META_BASE_HEIGHT });
   const [viewportSize, setViewportSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const mediaInputRef = useRef<HTMLInputElement | null>(null);
+
+  const formatNumber = (value: number, fractionDigits = 0) =>
+    new Intl.NumberFormat('tr-TR', {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
 
   const normalizePath = (path: string) => path.replace(/\\/g, '/');
 
@@ -328,27 +340,69 @@ export function ScenePanel() {
         />
       </div>
 
-      <div className="fixed bottom-36 right-2 z-50 flex w-[clamp(135px,12vw,190px)] items-center gap-1.5 sm:right-4 md:right-6 lg:right-8">
-        <button
-          type="button"
-          className="pointer-events-auto flex h-8 flex-1 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-black/20 px-3 text-[11px] font-semibold text-cyan-100 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
-          aria-label="Panel medyası yükle"
-          title="Resim veya video yükle"
-          onClick={() => mediaInputRef.current?.click()}
-        >
-          Medya Yükle
-        </button>
+      <div
+        className={`fixed bottom-4 left-4 flex w-[clamp(135px,12vw,190px)] flex-col gap-2 sm:left-6 lg:left-8 ${
+          isProductPanelOpen ? 'z-30 pointer-events-none' : 'z-50'
+        }`}
+      >
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            className="pointer-events-auto flex h-8 flex-1 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-black/20 px-3 text-[11px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
+            aria-label="Panel medyası yükle"
+            title="Resim veya video yükle"
+            onClick={() => mediaInputRef.current?.click()}
+          >
+            Medya Yükle
+          </button>
 
-        <button
-          type="button"
-          className="pointer-events-auto flex h-8 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[11px] font-semibold text-cyan-100 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Panel medyasını temizle"
-          title="Yüklenen medyayı kaldır"
-          onClick={clearPanelMedia}
-          disabled={!panelMedia}
-        >
-          Sil
-        </button>
+          <button
+            type="button"
+            className="pointer-events-auto flex h-8 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Panel medyasını temizle"
+            title="Yüklenen medyayı kaldır"
+            onClick={clearPanelMedia}
+            disabled={!panelMedia}
+          >
+            Sil
+          </button>
+        </div>
+
+        <div className="pointer-events-none rounded-xl border border-white/10 bg-black/20 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">Teknik Bilgi</p>
+          <div className="mt-1.5 space-y-1 text-blue-200/90">
+            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+              <span className="text-blue-200/90">Ürün Çözünürlüğü</span>
+              <span className="text-right font-semibold">{summary.resolution} px</span>
+            </div>
+            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+              <span className="text-blue-200/90">Yatay Panel (Sütun)</span>
+              <span className="text-right font-semibold">{summary.horizontalCabinets}</span>
+            </div>
+            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+              <span className="text-blue-200/90">Dikey Panel (Satır)</span>
+              <span className="text-right font-semibold">{summary.verticalCabinets}</span>
+            </div>
+            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+              <span className="text-blue-200/90">Toplam Panel Sayısı</span>
+              <span className="text-right font-semibold">{summary.totalCabinets}</span>
+            </div>
+            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+              <span className="text-blue-200/90">Gerekli Elektrik Gücü</span>
+              <span className="text-right font-semibold">{formatNumber(summary.maximumPower, 2)} kW</span>
+            </div>
+          </div>
+        </div>
+
+        {!isProductPanelOpen ? (
+          <button
+            type="button"
+            onClick={onToggleProductPanel}
+            className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
+          >
+            Ürün Listesi
+          </button>
+        ) : null}
       </div>
 
     </div>

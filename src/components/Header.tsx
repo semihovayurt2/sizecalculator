@@ -17,7 +17,7 @@ const steps = [
 
 const pixelPitchOptions = ['P1', 'P1.25', 'P1.5', 'P1.86', 'P2', 'P2.5', 'P3', 'P4', 'P5'];
 const FRAME_ALLOWANCE_CM = 4;
-const selectFieldClassName = 'h-10 w-full rounded-md border border-white/10 bg-[#111111] px-3 text-accent outline-none transition focus:border-[#2dd4bf]';
+const selectFieldClassName = 'h-10 w-full rounded-md border border-white/10 bg-[#111111] px-3 text-blue-200/90 outline-none transition focus:border-[#60a5fa]';
 const logoImage = new URL('../../dinamoledlogotransparent-cropped.png', import.meta.url).href;
 
 const panelTypeOptions = [
@@ -41,31 +41,31 @@ function StepperInput({ label, value, min, step, suffix, onChange }: StepperInpu
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-semibold text-accent">{label}</label>
+      <label className="mb-2 block text-sm font-semibold text-blue-200/90">{label}</label>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => updateValue(value - step)}
-          className="h-8 w-8 rounded-md border border-white/25 bg-transparent text-lg leading-none text-accent transition hover:border-[#2dd4bf] hover:text-[#2dd4bf]"
+          className="h-8 w-8 rounded-md border border-white/25 bg-transparent text-lg leading-none text-blue-200/90 transition hover:border-[#60a5fa] hover:text-[#60a5fa]"
           aria-label={`${label} azalt`}
         >
           -
         </button>
-        <div className="flex h-8 flex-1 items-center rounded-md border border-white/25 bg-transparent px-3">
+          <div className="flex h-8 flex-1 items-center rounded-md border border-white/25 bg-transparent px-3">
           <input
             type="number"
             value={value}
             min={min}
             step={step}
             onChange={(e) => updateValue(Number(e.target.value))}
-            className="w-full border-none bg-transparent text-center text-base text-accent outline-none placeholder:text-orange-300/50"
+            className="w-full border-none bg-transparent text-center text-base text-blue-200/90 outline-none placeholder:text-blue-200/35"
           />
-          {suffix ? <span className="text-sm text-accent">{suffix}</span> : null}
+          {suffix ? <span className="text-sm text-blue-200/90">{suffix}</span> : null}
         </div>
         <button
           type="button"
           onClick={() => updateValue(value + step)}
-          className="h-8 w-8 rounded-md border border-white/25 bg-transparent text-lg leading-none text-accent transition hover:border-[#2dd4bf] hover:text-[#2dd4bf]"
+          className="h-8 w-8 rounded-md border border-white/25 bg-transparent text-lg leading-none text-blue-200/90 transition hover:border-[#60a5fa] hover:text-[#60a5fa]"
           aria-label={`${label} artır`}
         >
           +
@@ -108,7 +108,7 @@ export function Header({ step, setStep }: HeaderProps) {
   }, [autoHeightM, autoWidthM, config.height, config.width, setConfig]);
 
   return (
-    <header className="pointer-events-none absolute inset-x-0 top-0 z-30">
+    <header className="pointer-events-none absolute inset-x-0 -top-2 z-30">
       <div className="mx-auto max-w-[1800px] px-4 pt-0 sm:px-6 lg:px-10">
         <div
           className="pointer-events-auto"
@@ -129,14 +129,14 @@ export function Header({ step, setStep }: HeaderProps) {
                       setStep(s.id);
                       setIsExpanded(true);
                     }}
-                    className={`px-3 py-2 text-sm font-semibold ${step === s.id ? 'text-[#2dd4bf]' : 'text-accent'}`}
+                    className={`px-3 py-2 text-sm font-semibold ${step === s.id ? 'text-[#60a5fa]' : 'text-blue-200/90'}`}
                   >
                     {s.label}
                   </button>
                   {step === s.id ? (
                     <motion.div
                       layoutId="active-underline"
-                      className="absolute left-0 right-0 mx-auto mt-0.5 h-1 w-10 rounded-full bg-[#2dd4bf]"
+                      className="absolute left-0 right-0 mx-auto mt-0.5 h-1 w-10 rounded-full bg-[#60a5fa]"
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
                   ) : null}
@@ -154,13 +154,13 @@ export function Header({ step, setStep }: HeaderProps) {
             <div className="p-2.5 pt-3">
               {step === 1 ? (
                 <>
-                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-accent">Senaryo Seçimi</h3>
+                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-blue-200/90">Senaryo Seçimi</h3>
                   <div className="grid gap-3 md:grid-cols-2">
                     <div>
                       <SceneSelector light />
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Unit</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Unit</label>
                       <select
                         value={config.unit}
                         onChange={() => setConfig({ unit: 'cm' })}
@@ -191,10 +191,10 @@ export function Header({ step, setStep }: HeaderProps) {
 
               {step === 2 ? (
                 <>
-                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-accent">Display Configuration</h3>
+                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-blue-200/90">Display Configuration</h3>
                   <div className="grid gap-3 md:grid-cols-3">
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Select Product</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Select Product</label>
                       <select
                         value={config.pixelPitch}
                         onChange={(e) => setConfig({ pixelPitch: e.target.value })}
@@ -208,7 +208,7 @@ export function Header({ step, setStep }: HeaderProps) {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Sending Box</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Sending Box</label>
                       <select className={selectFieldClassName}>
                         <option>VX400</option>
                         <option>VX600</option>
@@ -216,22 +216,22 @@ export function Header({ step, setStep }: HeaderProps) {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Voltage</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Voltage</label>
                       <select className={selectFieldClassName}>
                         <option>220V</option>
                         <option>110V</option>
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Columns (Auto)</label>
-                      <div className="flex h-10 items-center px-3 font-medium text-accent">{columns}</div>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Columns (Auto)</label>
+                      <div className="flex h-10 items-center px-3 font-medium text-blue-200/90">{columns}</div>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Rows (Auto)</label>
-                      <div className="flex h-10 items-center px-3 font-medium text-accent">{rows}</div>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Rows (Auto)</label>
+                      <div className="flex h-10 items-center px-3 font-medium text-blue-200/90">{rows}</div>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Panel Type</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Panel Type</label>
                       <select
                         value={selectedPanelValue}
                         onChange={(e) => {
@@ -260,7 +260,7 @@ export function Header({ step, setStep }: HeaderProps) {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Power Cable Routing Mode</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Power Cable Routing Mode</label>
                       <select
                         value={config.mountType}
                         onChange={(e) => setConfig({ mountType: e.target.value as typeof config.mountType })}
@@ -272,14 +272,14 @@ export function Header({ step, setStep }: HeaderProps) {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Network Cable Routing Mode</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Network Cable Routing Mode</label>
                       <select className={selectFieldClassName}>
                         <option>Vertical priority</option>
                         <option>Horizontal priority</option>
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">Starting Point</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Starting Point</label>
                       <select className={selectFieldClassName}>
                         <option>Top-left</option>
                         <option>Top-right</option>
@@ -293,18 +293,18 @@ export function Header({ step, setStep }: HeaderProps) {
 
               {step === 3 ? (
                 <>
-                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-accent">Export to PDF</h3>
+                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-blue-200/90">Export to PDF</h3>
                   <div className="mx-auto max-w-4xl space-y-4">
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-accent">File Name</label>
+                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">File Name</label>
                       <input
                         type="text"
                         defaultValue={config.projectName}
-                        className="h-10 w-full rounded-md border border-white/20 bg-transparent px-3 text-accent outline-none focus:border-[#2dd4bf]"
+                        className="h-10 w-full rounded-md border border-white/20 bg-transparent px-3 text-blue-200/90 outline-none focus:border-[#60a5fa]"
                         placeholder="please enter"
                       />
                     </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-accent">
+                    <div className="flex flex-wrap gap-4 text-sm text-blue-200/90">
                       <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> Home Page</label>
                       <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> LED Wall Display</label>
                       <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> LED Wall information</label>

@@ -191,8 +191,8 @@ export function PDFButton({ compact = false }: PDFButtonProps) {
       onClick={handleExportPDF}
       className={`inline-flex items-center justify-center gap-1.5 font-semibold text-[#052d2a] transition hover:bg-[#34e0cc] ${
         compact
-          ? 'rounded-md border border-white/45 ring-1 ring-orange-400/65 bg-transparent px-2 py-1 text-xs uppercase tracking-[0.2em] text-accent/75 whitespace-nowrap hover:bg-transparent hover:text-accent/95'
-          : 'rounded-3xl bg-[#2dd4bf] px-5 py-3 text-sm'
+          ? 'rounded-md border border-white/10 ring-1 ring-[#60a5fa]/30 bg-transparent px-2 py-1 text-xs uppercase tracking-[0.2em] text-blue-200/75 whitespace-nowrap hover:bg-transparent hover:text-blue-200/95'
+          : 'rounded-3xl bg-[#60a5fa] px-5 py-3 text-sm'
       }`}
     >
       <FileText className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden="true" />

@@ -27,8 +27,8 @@ export function Sidebar() {
   return (
     <div className="space-y-8">
       <div className="rounded-3xl border border-white/10 bg-[#111111]/80 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
-        <div className="mb-6 flex items-center gap-3 text-sm uppercase tracking-[0.32em] text-white/40">
-          <Sparkles className="h-5 w-5 text-accent" />
+        <div className="mb-6 flex items-center gap-3 text-sm uppercase tracking-[0.32em] text-blue-200/40">
+          <Sparkles className="h-5 w-5 text-blue-200/80" />
           <span>Proje Bilgileri</span>
         </div>
         <div className="space-y-4">
@@ -43,8 +43,8 @@ export function Sidebar() {
       </div>
 
       <div className="rounded-3xl border border-white/10 bg-[#111111]/80 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
-        <div className="mb-6 flex items-center gap-3 text-sm uppercase tracking-[0.32em] text-white/40">
-          <Target className="h-5 w-5 text-accent" />
+        <div className="mb-6 flex items-center gap-3 text-sm uppercase tracking-[0.32em] text-blue-200/40">
+          <Target className="h-5 w-5 text-blue-200/80" />
           <span>LED Bilgileri</span>
         </div>
         <div className="grid gap-4">
