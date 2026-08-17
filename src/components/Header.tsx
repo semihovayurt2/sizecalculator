@@ -7,6 +7,8 @@ import { PDFButton } from './PDFButton';
 interface HeaderProps {
   step: number;
   setStep: (n: number) => void;
+  is3DMode: boolean;
+  onToggle3D: () => void;
 }
 
 const steps = [
@@ -75,7 +77,7 @@ function StepperInput({ label, value, min, step, suffix, onChange }: StepperInpu
   );
 }
 
-export function Header({ step, setStep }: HeaderProps) {
+export function Header({ step, setStep, is3DMode, onToggle3D }: HeaderProps) {
   const config = useStore((s) => s.config);
   const setConfig = useStore((s) => s.setConfig);
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -144,11 +146,27 @@ export function Header({ step, setStep }: HeaderProps) {
               ))}
             </ul>
           </nav>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggle3D}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                is3DMode
+                  ? 'border-[#60a5fa]/80 bg-[#60a5fa]/10 text-[#60a5fa]'
+                  : 'border-white/10 bg-black/20 text-blue-200/90 hover:bg-black/30'
+              }`}
+            >
+              3D
+            </button>
+          </div>
           </div>
 
           <div
-            className={`pointer-events-auto mx-auto mt-2 w-[min(520px,calc(100vw-2rem))] overflow-visible rounded-2xl border border-white/10 bg-[#0b0b0b]/20 backdrop-blur-[2px] transition-all duration-100 ease-out sm:w-[min(580px,calc(100vw-3rem))] ${
-              isExpanded ? 'max-h-[720px] opacity-100' : 'max-h-0 opacity-0'
+            className={`pointer-events-auto mx-auto mt-2 w-[min(520px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#0b0b0b]/20 backdrop-blur-[2px] transition-all duration-100 ease-out sm:w-[min(580px,calc(100vw-3rem))] ${
+              !isExpanded
+                ? 'pointer-events-none max-h-0 overflow-hidden opacity-0'
+                : 'max-h-[720px] overflow-visible opacity-100'
             }`}
           >
             <div className="p-2.5 pt-3">

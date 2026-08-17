@@ -1,13 +1,20 @@
-import { useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
 import { useStore } from '../store/useStore';
-import { Mesh, Vector3 } from 'three';
+import { Group, Plane, Vector3 } from 'three';
+
+interface LedSceneProps {
+  screenCenterX: number;
+  screenCenterY: number;
+  frameAspectRatio: number;
+  screenWidthRatio: number;
+  screenHeightRatio: number;
+}
 
 const CabinetMesh = ({ columns, rows, width, height }: { columns: number; rows: number; width: number; height: number }) => {
-  const totalWidth = width;
-  const totalHeight = height;
-  const cabinetWidth = width / columns;
-  const cabinetHeight = height / rows;
+  const totalWidth = columns * width;
+  const totalHeight = rows * height;
+  const cabinetWidth = width;
+  const cabinetHeight = height;
 
   const cells = useMemo(() => {
     const result = [];
@@ -17,9 +24,15 @@ const CabinetMesh = ({ columns, rows, width, height }: { columns: number; rows: 
         const left = x * cabinetWidth - totalWidth / 2;
         const bottom = y * cabinetHeight - totalHeight / 2;
         result.push(
-          <mesh key={key} position={[left + cabinetWidth / 2, bottom + cabinetHeight / 2, 0.01]}>
-            <boxGeometry args={[cabinetWidth * 0.98, cabinetHeight * 0.98, 0.02]} />
-            <meshStandardMaterial color="#111111" metalness={0.4} roughness={0.2} emissive="#111111" />
+          <mesh key={key} position={[left + cabinetWidth / 2, bottom + cabinetHeight / 2, 0.03]}>
+            <boxGeometry args={[cabinetWidth * 0.96, cabinetHeight * 0.96, 0.04]} />
+            <meshStandardMaterial
+              color="#0d1117"
+              emissive="#0f172a"
+              emissiveIntensity={0.9}
+              metalness={0.3}
+              roughness={0.35}
+            />
           </mesh>,
         );
       }
@@ -27,33 +40,86 @@ const CabinetMesh = ({ columns, rows, width, height }: { columns: number; rows: 
     return result;
   }, [columns, rows, cabinetWidth, cabinetHeight, totalWidth, totalHeight]);
 
-  return <group>{cells}</group>;
-};
-
-const HumanSilhouette = () => {
   return (
-    <mesh position={[0, -0.35, 1.15]}>
-      <coneGeometry args={[0.15, 1.75, 24]} />
-      <meshStandardMaterial color="#000000" emissive="#050505" />
-    </mesh>
+    <group>
+      <mesh position={[0, 0, -0.02]}>
+        <boxGeometry args={[totalWidth + 0.08, totalHeight + 0.08, 0.05]} />
+        <meshStandardMaterial color="#1f2937" metalness={0.5} roughness={0.4} />
+      </mesh>
+      {cells}
+    </group>
   );
 };
 
-export function LedScene() {
+export function LedScene({
+  screenCenterX,
+  screenCenterY,
+  frameAspectRatio,
+  screenWidthRatio,
+  screenHeightRatio,
+}: LedSceneProps) {
   const config = useStore((state) => state.config);
+  const panelGroupRef = useRef<Group>(null);
+  const dragRef = useRef<{ start: Vector3; origin: Vector3 } | null>(null);
 
   const columns = Math.max(1, Math.round(config.width / config.cabinetWidth));
   const rows = Math.max(1, Math.round(config.height / config.cabinetHeight));
+  const totalWidth = columns * config.cabinetWidth;
+  const totalHeight = rows * config.cabinetHeight;
+  const cameraDistance = 7.5;
+  const cameraFov = 38;
+  const visibleHeight = 2 * cameraDistance * Math.tan((cameraFov / 2) * (Math.PI / 180));
+  const visibleWidth = visibleHeight * frameAspectRatio;
+  const modelWidth = visibleWidth * screenWidthRatio;
+  const modelHeight = visibleHeight * screenHeightRatio;
+  const initialPosition: [number, number, number] = [
+    (screenCenterX - 0.5) * visibleWidth,
+    (0.5 - screenCenterY) * visibleHeight,
+    0,
+  ];
+
+  const handlePointerDown = (event: any) => {
+    event.stopPropagation();
+    if (!panelGroupRef.current) return;
+    event.target.setPointerCapture?.(event.pointerId);
+    dragRef.current = {
+      start: event.point.clone(),
+      origin: panelGroupRef.current.position.clone(),
+    };
+  };
+
+  const handlePointerMove = (event: any) => {
+    if (!dragRef.current || !panelGroupRef.current) return;
+
+    const plane = new Plane(new Vector3(0, 0, 1), 0);
+    const dragPoint = new Vector3();
+    const hit = event.ray.intersectPlane(plane, dragPoint);
+    if (!hit) return;
+
+    const delta = dragPoint.sub(dragRef.current.start);
+    panelGroupRef.current.position.set(
+      dragRef.current.origin.x + delta.x,
+      dragRef.current.origin.y + delta.y,
+      dragRef.current.origin.z,
+    );
+  };
+
+  const handlePointerUp = () => {
+    dragRef.current = null;
+  };
 
   return (
     <>
-      <mesh position={[0, 1.2, 0]}>
-        <planeGeometry args={[config.width, config.height]} />
-        <meshStandardMaterial color="#050505" emissive="#181919" emissiveIntensity={0.8} opacity={0.98} transparent />
-      </mesh>
-
-      <group position={[0, 1.2, 0.02]}>
-        <CabinetMesh columns={columns} rows={rows} width={config.width} height={config.height} />
+      <group
+        ref={panelGroupRef}
+        scale={[modelWidth / totalWidth, modelHeight / totalHeight, 1]}
+        position={initialPosition}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <CabinetMesh columns={columns} rows={rows} width={config.cabinetWidth} height={config.cabinetHeight} />
       </group>
 
       <pointLight position={[2, 3, 4]} intensity={2.1} color="#FF7A00" castShadow />

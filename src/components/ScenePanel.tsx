@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
 import { useStore } from '../store/useStore';
 import type { SceneMeta } from '../types';
+import { LedScene } from './LedScene';
 
 type SceneMap = Record<string, SceneMeta>;
 
 const META_BASE_WIDTH = 1200;
 const META_BASE_HEIGHT = 700;
 const HUMAN_HEIGHT_CM = 180;
+const BILLBOARD_SURFACE_HEIGHT_CM = 184;
 const PEOPLE_BASE_HEIGHT_PX = 140;
 const RATIO_SNAP_EPSILON = 0.01;
 const FRAME_ALLOWANCE_M = 0.04;
@@ -53,9 +56,10 @@ const CUSTOM_SOURCE_REFERENCES: Record<string, SourceReference> = {
 interface ScenePanelProps {
   isProductPanelOpen: boolean;
   onToggleProductPanel: () => void;
+  is3DMode: boolean;
 }
 
-export function ScenePanel({ isProductPanelOpen, onToggleProductPanel }: ScenePanelProps) {
+export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode }: ScenePanelProps) {
   const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, query: '?json' }) as SceneMap;
   const bgMap = import.meta.glob('../assets/scenes/*/background.svg', { eager: true, query: '?url' }) as Record<string, string>;
   const peopleImage = new URL('../../people-silhouette.png', import.meta.url).href;
@@ -70,7 +74,6 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel }: ScenePa
   const [frameSize, setFrameSize] = useState({ width: META_BASE_WIDTH, height: META_BASE_HEIGHT });
   const [viewportSize, setViewportSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const mediaInputRef = useRef<HTMLInputElement | null>(null);
-
   const formatNumber = (value: number, fractionDigits = 0) =>
     new Intl.NumberFormat('tr-TR', {
       minimumFractionDigits: fractionDigits,
@@ -250,11 +253,11 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel }: ScenePa
   const fittedFrameHeight = viewportAspectRatio > frameAspectRatio
     ? viewportSize.height
     : viewportSize.width / frameAspectRatio;
-  const peopleCalibrationPx = meta.peoplePosition.scale ?? HUMAN_HEIGHT_CM;
-  const peopleHeightPx = Math.min(
-    ledHeight,
-    ledHeight * (peopleCalibrationPx / HUMAN_HEIGHT_CM) * (HUMAN_HEIGHT_CM / config.wallHeightCm),
-  );
+  const renderedSurfaceHeightPx = placeholder.height * (fittedFrameHeight / activeFrameHeight);
+  const sceneHeightScale = BILLBOARD_SURFACE_HEIGHT_CM / Math.max(1, config.wallHeightCm);
+  const peopleHeightPx = renderedSurfaceHeightPx
+    * (HUMAN_HEIGHT_CM / BILLBOARD_SURFACE_HEIGHT_CM)
+    * sceneHeightScale;
 
 
   return (
@@ -274,45 +277,64 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel }: ScenePa
         >
           <div className="relative h-full w-full overflow-hidden">
             <div
-              className={`absolute ${exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
+              className={`absolute ${is3DMode ? 'inset-0 bg-transparent' : exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
               style={{
-                left: `${(ledLeft / activeFrameWidth) * 100}%`,
-                top: `${(ledTop / activeFrameHeight) * 100}%`,
-                width: `${(ledWidth / activeFrameWidth) * 100}%`,
-                height: `${(ledHeight / activeFrameHeight) * 100}%`,
-                padding: `${panelFrameThickness}px`,
+                left: is3DMode ? 0 : `${(ledLeft / activeFrameWidth) * 100}%`,
+                top: is3DMode ? 0 : `${(ledTop / activeFrameHeight) * 100}%`,
+                width: is3DMode ? '100%' : `${(ledWidth / activeFrameWidth) * 100}%`,
+                height: is3DMode ? '100%' : `${(ledHeight / activeFrameHeight) * 100}%`,
+                padding: is3DMode ? '0px' : `${panelFrameThickness}px`,
               }}
             >
-              <div
-                className={`relative h-full w-full overflow-hidden ${exceedsWall ? 'border border-red-300/80' : ''} bg-[#0D0F12]`}
-                style={{
-                  backgroundImage:
-                    panelMedia
-                      ? 'none'
-                      : 'linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)',
-                  backgroundSize: `${gridCellWidthPercent}% 100%, 100% ${gridCellHeightPercent}%`,
-                  backgroundPosition: '0 0, 0 0',
-                }}
-              >
-                {panelMedia ? (
-                  panelMedia.kind === 'video' ? (
-                    <video
-                      src={panelMedia.url}
-                      className="absolute inset-0 h-full w-full object-contain"
-                      controls
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
+              {is3DMode ? (
+                <div className="relative h-full w-full overflow-hidden rounded-[2px] bg-transparent">
+                  <Canvas
+                    camera={{ position: [0, 0, 7.5], fov: 38 }}
+                    gl={{ alpha: true }}
+                    style={{ width: '100%', height: '100%' }}
+                  >
+                    <ambientLight intensity={0.9} />
+                    <directionalLight position={[3, 5, 2]} intensity={1.6} color="#dbeafe" />
+                    <LedScene
+                      screenCenterX={(ledLeft + ledWidth / 2) / activeFrameWidth}
+                      screenCenterY={(ledTop + ledHeight / 2) / activeFrameHeight}
+                      frameAspectRatio={frameAspectRatio}
+                      screenWidthRatio={ledWidth / activeFrameWidth}
+                      screenHeightRatio={ledHeight / activeFrameHeight}
                     />
-                  ) : (
-                    <img src={panelMedia.url} alt="panel-media" className="absolute inset-0 h-full w-full object-contain" />
-                  )
-                ) : null}
+                  </Canvas>
+                </div>
+              ) : (
+                <div
+                  className={`relative h-full w-full overflow-hidden ${exceedsWall ? 'border border-red-300/80' : ''} bg-[#0D0F12]`}
+                  style={{
+                    backgroundImage:
+                      panelMedia
+                        ? 'none'
+                        : 'linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)',
+                    backgroundSize: `${gridCellWidthPercent}% 100%, 100% ${gridCellHeightPercent}%`,
+                    backgroundPosition: '0 0, 0 0',
+                  }}
+                >
+                  {panelMedia ? (
+                    panelMedia.kind === 'video' ? (
+                      <video
+                        src={panelMedia.url}
+                        className="absolute inset-0 h-full w-full object-contain"
+                        controls
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <img src={panelMedia.url} alt="panel-media" className="absolute inset-0 h-full w-full object-contain" />
+                    )
+                  ) : null}
 
-                <div className={`pointer-events-none absolute inset-0 ${panelMedia ? 'bg-black/10' : 'bg-gradient-to-b from-black/5 to-black/35'}`} />
-              </div>
-
+                  <div className={`pointer-events-none absolute inset-0 ${panelMedia ? 'bg-black/10' : 'bg-gradient-to-b from-black/5 to-black/35'}`} />
+                </div>
+              )}
             </div>
 
           </div>

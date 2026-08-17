@@ -7,6 +7,7 @@ import ScenePanel from './components/ScenePanel';
 function App() {
   const [step, setStep] = React.useState(1);
   const [isProductPanelOpen, setIsProductPanelOpen] = React.useState(false);
+  const [is3DMode, setIs3DMode] = React.useState(false);
 
   return (
     <div className="min-h-screen bg-background text-text overflow-hidden">
@@ -15,10 +16,16 @@ function App() {
           <ScenePanel
             isProductPanelOpen={isProductPanelOpen}
             onToggleProductPanel={() => setIsProductPanelOpen((value) => !value)}
+            is3DMode={is3DMode}
           />
         </div>
 
-        <Header step={step} setStep={setStep} />
+        <Header
+          step={step}
+          setStep={setStep}
+          is3DMode={is3DMode}
+          onToggle3D={() => setIs3DMode((value) => !value)}
+        />
 
         <div className="pointer-events-none absolute inset-0 z-40">
           <motion.div
