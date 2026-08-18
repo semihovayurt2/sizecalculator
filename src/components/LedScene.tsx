@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { useTexture } from '@react-three/drei';
 import { useStore } from '../store/useStore';
 import { Group, Plane, Vector3 } from 'three';
 
@@ -8,7 +9,10 @@ interface LedSceneProps {
   frameAspectRatio: number;
   screenWidthRatio: number;
   screenHeightRatio: number;
+  panelMediaUrl?: string;
 }
+
+const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
 const CabinetMesh = ({ columns, rows, width, height }: { columns: number; rows: number; width: number; height: number }) => {
   const totalWidth = columns * width;
@@ -57,13 +61,15 @@ export function LedScene({
   frameAspectRatio,
   screenWidthRatio,
   screenHeightRatio,
+  panelMediaUrl,
 }: LedSceneProps) {
   const config = useStore((state) => state.config);
+  const panelTexture = useTexture(panelMediaUrl || TRANSPARENT_PIXEL);
   const panelGroupRef = useRef<Group>(null);
   const dragRef = useRef<{ start: Vector3; origin: Vector3 } | null>(null);
 
-  const columns = Math.max(1, Math.round(config.width / config.cabinetWidth));
-  const rows = Math.max(1, Math.round(config.height / config.cabinetHeight));
+  const columns = Math.max(1, Math.floor(config.width / config.cabinetWidth));
+  const rows = Math.max(1, Math.floor(config.height / config.cabinetHeight));
   const totalWidth = columns * config.cabinetWidth;
   const totalHeight = rows * config.cabinetHeight;
   const cameraDistance = 7.5;
@@ -120,6 +126,12 @@ export function LedScene({
         onPointerCancel={handlePointerUp}
       >
         <CabinetMesh columns={columns} rows={rows} width={config.cabinetWidth} height={config.cabinetHeight} />
+        {panelMediaUrl ? (
+          <mesh position={[0, 0, 0.06]}>
+            <planeGeometry args={[totalWidth, totalHeight]} />
+            <meshBasicMaterial map={panelTexture} toneMapped={false} />
+          </mesh>
+        ) : null}
       </group>
 
       <pointLight position={[2, 3, 4]} intensity={2.1} color="#FF7A00" castShadow />

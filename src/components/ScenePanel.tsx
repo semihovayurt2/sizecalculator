@@ -11,8 +11,8 @@ const META_BASE_HEIGHT = 700;
 const HUMAN_HEIGHT_CM = 180;
 const BILLBOARD_SURFACE_HEIGHT_CM = 184;
 const PEOPLE_BASE_HEIGHT_PX = 140;
-const RATIO_SNAP_EPSILON = 0.01;
 const FRAME_ALLOWANCE_M = 0.04;
+const SCENE_PANEL_HORIZONTAL_INSET = 0.03;
 
 type SourceReference = {
   sourceWidth: number;
@@ -24,12 +24,12 @@ const CUSTOM_SOURCE_REFERENCES: Record<string, SourceReference> = {
   'billboard-large': {
     sourceWidth: 1536,
     sourceHeight: 1024,
-      placeholder: { x: 182, y: 216, width: 1163, height: 554 },
+      placeholder: { x: 177, y: 218, width: 1170, height: 565 },
   },
   billboard: {
     sourceWidth: 1536,
     sourceHeight: 1024,
-      placeholder: { x: 182, y: 216, width: 1163, height: 554 },
+      placeholder: { x: 177, y: 218, width: 1170, height: 565 },
   },
   'billboard-small': {
     sourceWidth: 1536,
@@ -218,22 +218,19 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
 
   const wallWidthM = Math.max(0.1, config.wallWidthCm / 100);
   const wallHeightM = Math.max(0.1, config.wallHeightCm / 100);
-  const columns = Math.max(1, Math.round(config.width / config.cabinetWidth));
-  const rows = Math.max(1, Math.round(config.height / config.cabinetHeight));
-  const occupiedWidthM = config.width + FRAME_ALLOWANCE_M;
-  const occupiedHeightM = config.height + FRAME_ALLOWANCE_M;
+  const columns = Math.max(1, Math.floor(config.width / config.cabinetWidth));
+  const rows = Math.max(1, Math.floor(config.height / config.cabinetHeight));
+  const screenWidthM = columns * config.cabinetWidth;
+  const screenHeightM = rows * config.cabinetHeight;
+  const occupiedWidthM = screenWidthM + FRAME_ALLOWANCE_M;
+  const occupiedHeightM = screenHeightM + FRAME_ALLOWANCE_M;
 
   const widthRatio = occupiedWidthM / wallWidthM;
   const heightRatio = occupiedHeightM / wallHeightM;
 
-  const clampedWidthRatio = Math.min(Math.max(widthRatio, 0), 1);
-  const clampedHeightRatio = Math.min(Math.max(heightRatio, 0), 1);
-  const snappedWidthRatio = 1 - clampedWidthRatio <= RATIO_SNAP_EPSILON ? 1 : clampedWidthRatio;
-  const snappedHeightRatio = 1 - clampedHeightRatio <= RATIO_SNAP_EPSILON ? 1 : clampedHeightRatio;
   const exceedsWall = widthRatio > 1 || heightRatio > 1;
-
-  const ledWidth = placeholder.width * snappedWidthRatio;
-  const ledHeight = placeholder.height * snappedHeightRatio;
+  const ledWidth = placeholder.width * (1 - SCENE_PANEL_HORIZONTAL_INSET * 2);
+  const ledHeight = placeholder.height;
   const ledLeft = placeholder.x + (placeholder.width - ledWidth) / 2;
   const ledTop = placeholder.y + (placeholder.height - ledHeight) / 2;
   const occupiedWidthCm = Math.max(1, occupiedWidthM * 100);
@@ -277,13 +274,18 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
         >
           <div className="relative h-full w-full overflow-hidden">
             <div
-              className={`absolute ${is3DMode ? 'inset-0 bg-transparent' : exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
+              className={`absolute overflow-hidden ${is3DMode ? 'inset-0 bg-transparent' : exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
               style={{
                 left: is3DMode ? 0 : `${(ledLeft / activeFrameWidth) * 100}%`,
                 top: is3DMode ? 0 : `${(ledTop / activeFrameHeight) * 100}%`,
                 width: is3DMode ? '100%' : `${(ledWidth / activeFrameWidth) * 100}%`,
                 height: is3DMode ? '100%' : `${(ledHeight / activeFrameHeight) * 100}%`,
-                padding: is3DMode ? '0px' : `${panelFrameThickness}px`,
+                maxWidth: '100%',
+                maxHeight: '100%',
+                boxSizing: 'border-box',
+                contain: 'paint',
+                padding: '0px',
+                border: is3DMode ? '0px' : `4px solid ${exceedsWall ? 'rgba(248,113,113,0.8)' : '#8a8f98'}`,
               }}
             >
               {is3DMode ? (
@@ -301,6 +303,7 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
                       frameAspectRatio={frameAspectRatio}
                       screenWidthRatio={ledWidth / activeFrameWidth}
                       screenHeightRatio={ledHeight / activeFrameHeight}
+                      panelMediaUrl={panelMedia?.kind === 'image' ? panelMedia.url : undefined}
                     />
                   </Canvas>
                 </div>

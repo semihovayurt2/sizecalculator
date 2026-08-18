@@ -33,7 +33,7 @@ export function ProductTable() {
               <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Ürün</th>
               <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Model</th>
               <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Kod</th>
-              <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Adet</th>
+              <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">Miktar</th>
               <th className="px-5 py-4 uppercase tracking-[0.2em] text-blue-200/50">
                 <div className="flex items-center justify-between gap-4">
                   <span>Açıklama</span>
@@ -48,7 +48,7 @@ export function ProductTable() {
                 <td className="px-5 py-4 font-medium text-blue-200/90">{product.product}</td>
                 <td className="px-5 py-4">{product.model}</td>
                 <td className="px-5 py-4">{product.code}</td>
-                <td className="px-5 py-4">{product.quantity}</td>
+                <td className="px-5 py-4">{product.quantity} {product.unit ?? 'ADET'}</td>
                 <td className="px-5 py-4 text-blue-200/80">{product.description}</td>
               </tr>
             ))}

@@ -147,7 +147,7 @@ export function PDFButton({ compact = false }: PDFButtonProps) {
       leftMargin + columnWidths[0] + columnWidths[1] + columnWidths[2],
       leftMargin + columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3],
     ];
-    const headers = ['Urun', 'Model', 'Kod', 'Adet', 'Aciklama'];
+    const headers = ['Urun', 'Model', 'Kod', 'Miktar', 'Aciklama'];
 
     ensureSpace(12);
     drawTableHeader(y, columnX, columnWidths, headers);
@@ -165,7 +165,7 @@ export function PDFButton({ compact = false }: PDFButtonProps) {
       pdf.text(String(product.product ?? '-'), columnX[0] + 1.5, y + 4.8);
       pdf.text(String(product.model ?? '-'), columnX[1] + 1.5, y + 4.8);
       pdf.text(String(product.code ?? '-'), columnX[2] + 1.5, y + 4.8);
-      pdf.text(String(product.quantity ?? '-'), columnX[3] + 1.5, y + 4.8);
+      pdf.text(`${String(product.quantity ?? '-')} ${product.unit ?? 'ADET'}`, columnX[3] + 1.5, y + 4.8);
       pdf.text(descriptionLines, columnX[4] + 1.5, y + 4.8);
 
       pdf.setDrawColor(230, 230, 230);

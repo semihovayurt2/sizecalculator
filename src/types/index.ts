@@ -58,6 +58,21 @@ export interface ProductItem {
   model: string;
   code: string;
   quantity: number;
+  unit?: string;
+  description: string;
+}
+
+export interface StockCard {
+  code: string;
+  name: string;
+  type: string;
+  location?: 'indoor' | 'outdoor';
+  pixelPitchMm?: number;
+  cabinetWidthMm?: number;
+  cabinetHeightMm?: number;
+  powerWPerM2?: number;
+  maxPixelCapacity?: number;
+  powerW?: number;
   description: string;
 }
 

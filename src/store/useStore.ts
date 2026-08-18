@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { LEDConfig, ProductItem, SummaryData } from '../types';
-import { defaultProducts, defaultTopology } from '../data/products';
+import { calculateProducts, defaultTopology, stockCards } from '../data/products';
 
 interface StudioState {
   config: LEDConfig;
@@ -27,8 +27,8 @@ const defaultConfig: LEDConfig = {
   description: 'Mağaza ekranı için deneysel 3D kurulum.',
   application: 'Indoor commercial',
   unit: 'cm',
-  wallWidthCm: 300,
-  wallHeightCm: 200,
+  wallWidthCm: 324,
+  wallHeightCm: 180,
   environment: 'Mağaza',
   type: 'Indoor',
   pixelPitch: 'P2.6',
@@ -42,14 +42,24 @@ const defaultConfig: LEDConfig = {
   reserveRate: 0.1,
 };
 
+const getModuleCard = (config: LEDConfig) => {
+  const pitch = Number.parseFloat(config.pixelPitch.trim().toUpperCase().replace('P', '').replace(',', '.')) || 2.5;
+  const location = config.type === 'Outdoor' ? 'outdoor' : 'indoor';
+  return stockCards
+    .filter((card) => card.type === 'Led Modülü' && card.location === location)
+    .sort((left, right) => Math.abs((left.pixelPitchMm ?? 0) - pitch) - Math.abs((right.pixelPitchMm ?? 0) - pitch))[0];
+};
+
 const calculateSummary = (config: LEDConfig): SummaryData => {
   const pitchMeters = getPitchMeters(config.pixelPitch);
-  const area = config.width * config.height;
-  const totalPixels = Math.round((config.width / pitchMeters) * (config.height / pitchMeters));
-  const horizontalCabinets = Math.max(1, Math.round(config.width / config.cabinetWidth));
-  const verticalCabinets = Math.max(1, Math.round(config.height / config.cabinetHeight));
+  const horizontalCabinets = Math.max(1, Math.floor(config.width / config.cabinetWidth));
+  const verticalCabinets = Math.max(1, Math.floor(config.height / config.cabinetHeight));
+  const screenWidth = horizontalCabinets * config.cabinetWidth;
+  const screenHeight = verticalCabinets * config.cabinetHeight;
+  const area = screenWidth * screenHeight;
+  const totalPixels = Math.round((screenWidth / pitchMeters) * (screenHeight / pitchMeters));
   const totalCabinets = horizontalCabinets * verticalCabinets;
-  const modulesPerCabinet = 12;
+  const modulesPerCabinet = 1;
   const totalModules = totalCabinets * modulesPerCabinet;
   const receivingCards = Math.ceil(totalCabinets / 4);
   const sendingCards = Math.ceil(totalCabinets / 16);
@@ -60,7 +70,8 @@ const calculateSummary = (config: LEDConfig): SummaryData => {
   const powerCable = totalCabinets * 2;
   const frameProfiles = totalCabinets * 1.2;
   const lockMechanisms = totalCabinets * 1.1;
-  const totalPower = totalCabinets * 0.45;
+  const moduleCard = getModuleCard(config);
+  const totalPower = (area * (moduleCard?.powerWPerM2 ?? 400)) / 1000;
   const avgPower = totalPower / totalCabinets;
   const maxPower = totalPower * 1.2;
   const weightPerCabinet = 12;
@@ -70,7 +81,7 @@ const calculateSummary = (config: LEDConfig): SummaryData => {
   return {
     area,
     totalPixels,
-    resolution: `${Math.round(config.width / pitchMeters)} x ${Math.round(config.height / pitchMeters)}`,
+    resolution: `${Math.round(screenWidth / pitchMeters)} x ${Math.round(screenHeight / pitchMeters)}`,
     horizontalCabinets,
     verticalCabinets,
     totalCabinets,
@@ -92,19 +103,27 @@ const calculateSummary = (config: LEDConfig): SummaryData => {
   };
 };
 
+const getDerivedState = (config: LEDConfig) => {
+  const summary = calculateSummary(config);
+  return {
+    config,
+    summary,
+    products: calculateProducts(config, summary),
+  };
+};
+
+const initialDerivedState = getDerivedState(defaultConfig);
+
 export const useStore = create<StudioState>((set) => ({
-  config: defaultConfig,
-  products: defaultProducts,
+  config: initialDerivedState.config,
+  products: initialDerivedState.products,
   topology: defaultTopology,
-  summary: calculateSummary(defaultConfig),
+  summary: initialDerivedState.summary,
   selectedScene: 'billboard-large',
   setConfig: (partial) =>
     set((state) => {
       const nextConfig = { ...state.config, ...partial };
-      return {
-        config: nextConfig,
-        summary: calculateSummary(nextConfig),
-      };
+      return getDerivedState(nextConfig);
     }),
   setSelectedScene: (scene) => set(() => ({ selectedScene: scene })),
 }));
