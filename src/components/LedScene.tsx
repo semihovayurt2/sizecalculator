@@ -16,6 +16,68 @@ interface LedSceneProps {
 
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
+type WorldCorner = [number, number];
+type WorldCorners = [WorldCorner, WorldCorner, WorldCorner, WorldCorner];
+
+const interpolate = (corners: WorldCorners, u: number, v: number): WorldCorner => {
+  const [topLeft, topRight, bottomRight, bottomLeft] = corners;
+  return [
+    (1 - u) * (1 - v) * topLeft[0] + u * (1 - v) * topRight[0] + u * v * bottomRight[0] + (1 - u) * v * bottomLeft[0],
+    (1 - u) * (1 - v) * topLeft[1] + u * (1 - v) * topRight[1] + u * v * bottomRight[1] + (1 - u) * v * bottomLeft[1],
+  ];
+};
+
+const createQuadGeometry = (corners: WorldCorners, z: number) => {
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute([
+    corners[0][0], corners[0][1], z,
+    corners[1][0], corners[1][1], z,
+    corners[2][0], corners[2][1], z,
+    corners[3][0], corners[3][1], z,
+  ], 3));
+  geometry.setAttribute('uv', new Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2));
+  geometry.setIndex([0, 2, 1, 0, 3, 2]);
+  geometry.computeVertexNormals();
+  return geometry;
+};
+
+const PerspectiveCabinetMesh = ({ columns, rows, corners }: { columns: number; rows: number; corners: WorldCorners }) => {
+  const cells = useMemo(() => {
+    const result = [];
+    const gap = 0.0012;
+
+    for (let column = 0; column < columns; column += 1) {
+      for (let row = 0; row < rows; row += 1) {
+        const u0 = column / columns + gap;
+        const u1 = (column + 1) / columns - gap;
+        const v0 = row / rows + gap;
+        const v1 = (row + 1) / rows - gap;
+        const cellCorners: WorldCorners = [
+          interpolate(corners, u0, v0),
+          interpolate(corners, u1, v0),
+          interpolate(corners, u1, v1),
+          interpolate(corners, u0, v1),
+        ];
+        result.push(
+          <mesh key={`${column}-${row}`} geometry={createQuadGeometry(cellCorners, 0.03)}>
+            <meshStandardMaterial
+              color="#0D0F12"
+              emissive="#0D0F12"
+              emissiveIntensity={0.35}
+              metalness={0.3}
+              roughness={0.35}
+            />
+          </mesh>,
+        );
+      }
+    }
+
+    return result;
+  }, [columns, rows, corners]);
+
+  return <group>{cells}</group>;
+};
+
 const quadGeometry = (corners: [[number, number], [number, number], [number, number], [number, number]], z: number) => {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute([
@@ -94,7 +156,7 @@ export function LedScene({
   const perspectiveCorners = panelCorners?.map((corner) => [
     (corner.x - 0.5) * visibleWidth,
     (0.5 - corner.y) * visibleHeight,
-  ] as [number, number]) as [[number, number], [number, number], [number, number], [number, number]] | undefined;
+  ] as WorldCorner) as WorldCorners | undefined;
 
   const handlePointerDown = (event: any) => {
     event.stopPropagation();
@@ -146,9 +208,12 @@ export function LedScene({
         onPointerCancel={handlePointerUp}
       >
         {perspectiveCorners ? (
-          <mesh geometry={quadGeometry(perspectiveCorners, 0.03)}>
-            <meshStandardMaterial color="#0D0F12" emissive="#0D0F12" emissiveIntensity={0.35} metalness={0.3} roughness={0.35} />
-          </mesh>
+          <>
+            <mesh geometry={createQuadGeometry(perspectiveCorners, 0.02)}>
+              <meshStandardMaterial color="#8a8f98" metalness={0.35} roughness={0.45} />
+            </mesh>
+            <PerspectiveCabinetMesh columns={columns} rows={rows} corners={perspectiveCorners} />
+          </>
         ) : (
           <CabinetMesh columns={columns} rows={rows} width={config.cabinetWidth} height={config.cabinetHeight} />
         )}
