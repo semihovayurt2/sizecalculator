@@ -21,12 +21,6 @@ export function SceneSelector({ light = false }: SceneSelectorProps) {
   const selectedLabel = OPTIONS.find((option) => option.id === selected)?.label ?? '-- Sahne seçin --';
 
   useEffect(() => {
-    if (selected === 'studio') {
-      setSelected(null);
-    }
-  }, [selected, setSelected]);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
         setIsOpen(false);

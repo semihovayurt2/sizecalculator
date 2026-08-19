@@ -5,11 +5,12 @@ import type { SceneMeta } from '../types';
 import { LedScene } from './LedScene';
 
 type SceneMap = Record<string, SceneMeta>;
+type PanelCorner = { x: number; y: number };
+type PanelCorners = [PanelCorner, PanelCorner, PanelCorner, PanelCorner];
 
 const META_BASE_WIDTH = 1200;
 const META_BASE_HEIGHT = 700;
 const HUMAN_HEIGHT_CM = 180;
-const BILLBOARD_SURFACE_HEIGHT_CM = 184;
 const PEOPLE_BASE_HEIGHT_PX = 140;
 const FRAME_ALLOWANCE_M = 0.04;
 const SCENE_PANEL_HORIZONTAL_INSET = 0.03;
@@ -21,67 +22,44 @@ type SourceReference = {
 };
 
 const CUSTOM_SOURCE_REFERENCES: Record<string, SourceReference> = {
-  'billboard-large': {
-    sourceWidth: 1536,
-    sourceHeight: 1024,
-      placeholder: { x: 177, y: 218, width: 1170, height: 565 },
-  },
-  billboard: {
-    sourceWidth: 1536,
-    sourceHeight: 1024,
-      placeholder: { x: 177, y: 218, width: 1170, height: 565 },
-  },
-  'billboard-small': {
-    sourceWidth: 1536,
-    sourceHeight: 1024,
-    placeholder: { x: 548, y: 111, width: 446, height: 752 },
-  },
-  store: {
-    sourceWidth: 1536,
-    sourceHeight: 1024,
-     placeholder: { x: 188, y: 132, width: 1163, height: 190 },
-  },
-  mobilcar: {
-    sourceWidth: 1536,
-    sourceHeight: 1024,
-    placeholder: { x: 407, y: 216, width: 983, height: 458 },
-  },
-  totem: {
-    sourceWidth: 1536,
-    sourceHeight: 1024,
-    placeholder: { x: 407, y: 216, width: 983, height: 458 },
-  },
+  'billboard-large': { sourceWidth: 1536, sourceHeight: 1024, placeholder: { x: 177, y: 218, width: 1170, height: 565 } },
+  billboard: { sourceWidth: 1536, sourceHeight: 1024, placeholder: { x: 177, y: 218, width: 1170, height: 565 } },
+  'billboard-small': { sourceWidth: 1536, sourceHeight: 1024, placeholder: { x: 548, y: 111, width: 446, height: 752 } },
+  store: { sourceWidth: 1536, sourceHeight: 1024, placeholder: { x: 188, y: 132, width: 1163, height: 190 } },
+  mobilcar: { sourceWidth: 1536, sourceHeight: 1024, placeholder: { x: 407, y: 216, width: 983, height: 458 } },
+  totem: { sourceWidth: 1536, sourceHeight: 1024, placeholder: { x: 407, y: 216, width: 983, height: 458 } },
 };
+
 
 interface ScenePanelProps {
   isProductPanelOpen: boolean;
   onToggleProductPanel: () => void;
   is3DMode: boolean;
+  customBackgroundUrl: string | null;
 }
 
-export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode }: ScenePanelProps) {
+export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode, customBackgroundUrl }: ScenePanelProps) {
   const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, query: '?json' }) as SceneMap;
   const bgMap = import.meta.glob('../assets/scenes/*/background.svg', { eager: true, query: '?url' }) as Record<string, string>;
   const peopleImage = new URL('../../people-silhouette.png', import.meta.url).href;
 
   const selected = useStore((s) => s.selectedScene);
   const config = useStore((s) => s.config);
-  const summary = useStore((s) => s.summary);
 
   const [meta, setMeta] = useState<SceneMeta | null>(null);
   const [bgUrl, setBgUrl] = useState<string | null>(null);
   const [panelMedia, setPanelMedia] = useState<{ url: string; kind: 'image' | 'video' } | null>(null);
   const [frameSize, setFrameSize] = useState({ width: META_BASE_WIDTH, height: META_BASE_HEIGHT });
+  const [peopleX, setPeopleX] = useState(META_BASE_WIDTH / 2);
+  const [isPeopleDragging, setIsPeopleDragging] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const mediaInputRef = useRef<HTMLInputElement | null>(null);
-  const formatNumber = (value: number, fractionDigits = 0) =>
-    new Intl.NumberFormat('tr-TR', {
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(value);
-
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const peopleDragRef = useRef<{ startClientX: number; startX: number } | null>(null);
+  const [panelCorners, setPanelCorners] = useState<PanelCorners | null>(null);
+  const [cornerDragIndex, setCornerDragIndex] = useState<number | null>(null);
+  const [cornersVisible, setCornersVisible] = useState(false);
   const normalizePath = (path: string) => path.replace(/\\/g, '/');
-
   useEffect(() => {
     if (!selected) {
       setMeta(null);
@@ -89,21 +67,11 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
       return;
     }
 
-    const metaSourceMap: Record<string, string> = {
-      'billboard-large': 'billboard',
-      'billboard-small': 'billboard',
-      mobilcar: 'totem',
-    };
+    const metaSourceMap: Record<string, string> = { 'billboard-large': 'billboard', 'billboard-small': 'billboard', mobilcar: 'totem' };
     const metaSource = metaSourceMap[selected as string] ?? selected;
     const key = Object.keys(scenes).find((p) => normalizePath(p).includes(`/${metaSource}/`));
     const bgKey = Object.keys(bgMap).find((p) => normalizePath(p).includes(`/${metaSource}/`));
-    if (key) {
-      setMeta((scenes as any)[key] as SceneMeta);
-    } else {
-      setMeta(null);
-    }
-
-    // custom user-provided scene backgrounds (folder: sahneler)
+    setMeta(key ? (scenes as any)[key] as SceneMeta : null);
     const customBackgrounds: Record<string, string> = {
       'billboard-large': new URL('../../sahneler/bilboard-dev.jpeg', import.meta.url).href,
       'billboard-small': new URL('../../sahneler/bilboard-mobil.jpeg', import.meta.url).href,
@@ -111,17 +79,9 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
       store: new URL('../../sahneler/bilboard-shop.jpeg', import.meta.url).href,
       mobilcar: new URL('../../sahneler/mobilcar-screen.jpeg', import.meta.url).href,
       totem: new URL('../../sahneler/mobilcar-screen.jpeg', import.meta.url).href,
-      studio: new URL('../../sahneler/depo-screen.avif', import.meta.url).href,
     };
-
-    if (customBackgrounds[selected as string]) {
-      setBgUrl(customBackgrounds[selected as string]);
-    } else if (bgKey) {
-      setBgUrl((bgMap as any)[bgKey] as string);
-    } else {
-      setBgUrl(null);
-    }
-  }, [selected]);
+    setBgUrl(customBackgroundUrl ?? customBackgrounds[selected as string] ?? (bgKey ? (bgMap as any)[bgKey] as string : null));
+  }, [customBackgroundUrl, selected]);
 
   useEffect(() => {
     if (!bgUrl) {
@@ -197,24 +157,152 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
     }
   };
 
+  const onPeoplePointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
+    event.preventDefault();
+    peopleDragRef.current = { startClientX: event.clientX, startX: peopleX };
+    setIsPeopleDragging(true);
+  };
+
+  const activeFrameWidth = frameSize.width;
+  const activeFrameHeight = frameSize.height;
+
+  const placeholderRef = CUSTOM_SOURCE_REFERENCES[selected ?? ''];
+  const basePlaceholder = meta
+    ? placeholderRef
+      ? {
+          x: placeholderRef.placeholder.x * (activeFrameWidth / placeholderRef.sourceWidth),
+          y: placeholderRef.placeholder.y * (activeFrameHeight / placeholderRef.sourceHeight),
+          width: placeholderRef.placeholder.width * (activeFrameWidth / placeholderRef.sourceWidth),
+          height: placeholderRef.placeholder.height * (activeFrameHeight / placeholderRef.sourceHeight),
+        }
+      : {
+          x: meta.placeholder.x * (activeFrameWidth / META_BASE_WIDTH),
+          y: meta.placeholder.y * (activeFrameHeight / META_BASE_HEIGHT),
+          width: meta.placeholder.width * (activeFrameWidth / META_BASE_WIDTH),
+          height: meta.placeholder.height * (activeFrameHeight / META_BASE_HEIGHT),
+        }
+    : null;
+
+  useEffect(() => {
+    if (!basePlaceholder) {
+      setPanelCorners(null);
+      setCornersVisible(false);
+      return;
+    }
+
+    setPanelCorners([
+      { x: basePlaceholder.x / activeFrameWidth, y: basePlaceholder.y / activeFrameHeight },
+      { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth, y: basePlaceholder.y / activeFrameHeight },
+      { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight },
+      { x: basePlaceholder.x / activeFrameWidth, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight },
+    ]);
+  }, [activeFrameHeight, activeFrameWidth, selected, bgUrl]);
+
+  useEffect(() => {
+    if (cornerDragIndex === null) {
+      return undefined;
+    }
+
+    const onPointerMove = (event: PointerEvent) => {
+      const frame = frameRef.current;
+      if (!frame) {
+        return;
+      }
+
+      const rect = frame.getBoundingClientRect();
+      const nextPoint = {
+        x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+        y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+      };
+      setPanelCorners((corners) => {
+        if (!corners) {
+          return corners;
+        }
+        return corners.map((corner, index) => index === cornerDragIndex ? nextPoint : corner) as PanelCorners;
+      });
+    };
+
+    const stopDragging = () => setCornerDragIndex(null);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', stopDragging);
+    window.addEventListener('pointercancel', stopDragging);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', stopDragging);
+      window.removeEventListener('pointercancel', stopDragging);
+    };
+  }, [cornerDragIndex]);
+
+  useEffect(() => {
+    if (!isPeopleDragging) {
+      return;
+    }
+
+    const onPointerMove = (event: PointerEvent) => {
+      const drag = peopleDragRef.current;
+      const frame = frameRef.current;
+      if (!drag || !frame) {
+        return;
+      }
+
+      const frameRect = frame.getBoundingClientRect();
+      const scale = activeFrameWidth / Math.max(1, frameRect.width);
+      setPeopleX(drag.startX + (event.clientX - drag.startClientX) * scale);
+    };
+
+    const stopDragging = () => {
+      peopleDragRef.current = null;
+      setIsPeopleDragging(false);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', stopDragging);
+    window.addEventListener('pointercancel', stopDragging);
+
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', stopDragging);
+      window.removeEventListener('pointercancel', stopDragging);
+    };
+  }, [activeFrameWidth, isPeopleDragging]);
+
+  useEffect(() => {
+    if (meta) {
+      setPeopleX((meta.peoplePosition.x / META_BASE_WIDTH) * activeFrameWidth);
+    }
+  }, [activeFrameWidth, meta]);
+
   if (!meta || !bgUrl) {
     return (
       <div className="flex min-h-[420px] items-center justify-center text-white/40">Sahne seçilmedi.</div>
     );
   }
 
-  const placeholderRef = CUSTOM_SOURCE_REFERENCES[selected ?? ''];
-  const activeFrameWidth = frameSize.width;
-  const activeFrameHeight = frameSize.height;
-
-  const placeholder = placeholderRef
-    ? placeholderRef.placeholder
-    : {
-        x: meta.placeholder.x * (activeFrameWidth / META_BASE_WIDTH),
-        y: meta.placeholder.y * (activeFrameHeight / META_BASE_HEIGHT),
-        width: meta.placeholder.width * (activeFrameWidth / META_BASE_WIDTH),
-        height: meta.placeholder.height * (activeFrameHeight / META_BASE_HEIGHT),
-      };
+  const activeCorners = panelCorners ?? [
+    { x: basePlaceholder!.x / activeFrameWidth, y: basePlaceholder!.y / activeFrameHeight },
+    { x: (basePlaceholder!.x + basePlaceholder!.width) / activeFrameWidth, y: basePlaceholder!.y / activeFrameHeight },
+    { x: (basePlaceholder!.x + basePlaceholder!.width) / activeFrameWidth, y: (basePlaceholder!.y + basePlaceholder!.height) / activeFrameHeight },
+    { x: basePlaceholder!.x / activeFrameWidth, y: (basePlaceholder!.y + basePlaceholder!.height) / activeFrameHeight },
+  ] as PanelCorners;
+  const minCornerX = Math.min(...activeCorners.map((corner) => corner.x));
+  const maxCornerX = Math.max(...activeCorners.map((corner) => corner.x));
+  const minCornerY = Math.min(...activeCorners.map((corner) => corner.y));
+  const maxCornerY = Math.max(...activeCorners.map((corner) => corner.y));
+  const cornerPolygon = activeCorners
+    .map((corner) => `${(((corner.x - minCornerX) / Math.max(0.001, maxCornerX - minCornerX)) * 100).toFixed(2)}% ${(((corner.y - minCornerY) / Math.max(0.001, maxCornerY - minCornerY)) * 100).toFixed(2)}%`)
+    .join(', ');
+  const handleOffsets = [
+    { x: -8, y: -8 },
+    { x: 8, y: -8 },
+    { x: 8, y: 8 },
+    { x: -8, y: 8 },
+  ];
+  const placeholder = {
+    x: minCornerX * activeFrameWidth,
+    y: minCornerY * activeFrameHeight,
+    width: (maxCornerX - minCornerX) * activeFrameWidth,
+    height: (maxCornerY - minCornerY) * activeFrameHeight,
+  };
 
   const wallWidthM = Math.max(0.1, config.wallWidthCm / 100);
   const wallHeightM = Math.max(0.1, config.wallHeightCm / 100);
@@ -251,19 +339,41 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
     ? viewportSize.height
     : viewportSize.width / frameAspectRatio;
   const renderedSurfaceHeightPx = placeholder.height * (fittedFrameHeight / activeFrameHeight);
-  const sceneHeightScale = BILLBOARD_SURFACE_HEIGHT_CM / Math.max(1, config.wallHeightCm);
+  const sceneHeightScale = 184 / Math.max(1, config.wallHeightCm);
   const peopleHeightPx = renderedSurfaceHeightPx
-    * (HUMAN_HEIGHT_CM / BILLBOARD_SURFACE_HEIGHT_CM)
+    * (HUMAN_HEIGHT_CM / 184)
     * sceneHeightScale;
 
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
       <div
+        ref={frameRef}
         className="absolute left-1/2 top-1/2"
         style={{ width: `${fittedFrameWidth}px`, height: `${fittedFrameHeight}px`, transform: 'translate(-50%, -50%)' }}
       >
-        <img src={bgUrl} alt={meta.name} className="absolute inset-0 h-full w-full object-contain" />
+        <img src={bgUrl} alt={meta.name} className="absolute inset-0 z-0 h-full w-full object-contain" />
+
+        {cornersVisible ? activeCorners.map((corner, index) => (
+          <button
+            key={`panel-corner-${index}`}
+            type="button"
+            aria-label={`${index + 1}. panel köşesini taşı`}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setCornerDragIndex(index);
+            }}
+              onClick={(event) => event.stopPropagation()}
+            className="group absolute z-40 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center rounded-full border border-white/90 bg-[#60a5fa]/85 shadow-[0_3px_12px_rgba(0,0,0,0.45)] ring-2 ring-black/25 backdrop-blur-sm transition-transform duration-150 hover:scale-110 hover:bg-[#93c5fd] cursor-crosshair"
+            style={{
+              left: `calc(${corner.x * 100}% + ${handleOffsets[index].x}px)`,
+              top: `calc(${corner.y * 100}% + ${handleOffsets[index].y}px)`,
+            }}
+          >
+            <span className="h-2 w-2 rounded-full bg-white/90 shadow-[0_0_5px_rgba(255,255,255,0.8)] transition-transform duration-150 group-hover:scale-125" />
+          </button>
+        )) : null}
 
         <div
           className="absolute inset-0"
@@ -274,7 +384,8 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
         >
           <div className="relative h-full w-full overflow-hidden">
             <div
-              className={`absolute overflow-hidden ${is3DMode ? 'inset-0 bg-transparent' : exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
+              className={`absolute overflow-hidden ${is3DMode ? 'z-20 inset-0 bg-transparent' : exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
+              onClick={() => setCornersVisible((visible) => !visible)}
               style={{
                 left: is3DMode ? 0 : `${(ledLeft / activeFrameWidth) * 100}%`,
                 top: is3DMode ? 0 : `${(ledTop / activeFrameHeight) * 100}%`,
@@ -285,14 +396,25 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
                 boxSizing: 'border-box',
                 contain: 'paint',
                 padding: '0px',
+                clipPath: is3DMode ? 'none' : `polygon(${cornerPolygon})`,
                 border: is3DMode ? '0px' : `4px solid ${exceedsWall ? 'rgba(248,113,113,0.8)' : '#8a8f98'}`,
               }}
             >
               {is3DMode ? (
-                <div className="relative h-full w-full overflow-hidden rounded-[2px] bg-transparent">
+                <div className="relative z-10 h-full w-full overflow-hidden rounded-[2px] bg-transparent">
                   <Canvas
-                    camera={{ position: [0, 0, 7.5], fov: 38 }}
+                    orthographic
+                    camera={{
+                      position: [0, 0, 7.5],
+                      left: -frameAspectRatio,
+                      right: frameAspectRatio,
+                      top: 1,
+                      bottom: -1,
+                      near: 0.1,
+                      far: 100,
+                    }}
                     gl={{ alpha: true }}
+                    className="relative z-30"
                     style={{ width: '100%', height: '100%' }}
                   >
                     <ambientLight intensity={0.9} />
@@ -303,12 +425,19 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
                       frameAspectRatio={frameAspectRatio}
                       screenWidthRatio={ledWidth / activeFrameWidth}
                       screenHeightRatio={ledHeight / activeFrameHeight}
+                      panelCorners={activeCorners}
+                      onPanelDrag={(delta) => {
+                        setPanelCorners((corners) => corners?.map((corner) => ({
+                          x: corner.x + delta.x,
+                          y: corner.y + delta.y,
+                        })) as PanelCorners);
+                      }}
                       panelMediaUrl={panelMedia?.kind === 'image' ? panelMedia.url : undefined}
                     />
                   </Canvas>
                 </div>
               ) : (
-                <div
+              <div
                   className={`relative h-full w-full overflow-hidden ${exceedsWall ? 'border border-red-300/80' : ''} bg-[#0D0F12]`}
                   style={{
                     backgroundImage:
@@ -336,7 +465,7 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
                   ) : null}
 
                   <div className={`pointer-events-none absolute inset-0 ${panelMedia ? 'bg-black/10' : 'bg-gradient-to-b from-black/5 to-black/35'}`} />
-                </div>
+              </div>
               )}
             </div>
 
@@ -346,15 +475,29 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
         <img
           src={peopleImage}
           alt="people"
-          className="pointer-events-none absolute"
+          draggable={false}
+          className="pointer-events-auto absolute z-20 cursor-ew-resize touch-none select-none"
+          onPointerDown={onPeoplePointerDown}
+          onDragStart={(event) => event.preventDefault()}
           style={{
-            left: `${(meta.peoplePosition.x / META_BASE_WIDTH) * 100}%`,
+            left: `${(peopleX / activeFrameWidth) * 100}%`,
             top: `${(meta.peoplePosition.y / META_BASE_HEIGHT) * 100}%`,
             height: `${peopleHeightPx}px`,
             width: 'auto',
             transform: 'translate(-50%, -100%)',
           }}
         />
+
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2 text-[19px] font-normal leading-none text-white/65"
+          style={{
+            left: `${(peopleX / activeFrameWidth) * 100}%`,
+            top: `${(meta.peoplePosition.y / META_BASE_HEIGHT) * 100}%`,
+          }}
+        >
+          ↔
+        </span>
 
         <input
           ref={mediaInputRef}
@@ -391,32 +534,6 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode 
           >
             Sil
           </button>
-        </div>
-
-        <div className="pointer-events-none rounded-xl border border-white/10 bg-black/20 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">Teknik Bilgi</p>
-          <div className="mt-1.5 space-y-1 text-blue-200/90">
-            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-              <span className="text-blue-200/90">Ürün Çözünürlüğü</span>
-              <span className="text-right font-semibold">{summary.resolution} px</span>
-            </div>
-            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-              <span className="text-blue-200/90">Yatay Panel (Sütun)</span>
-              <span className="text-right font-semibold">{summary.horizontalCabinets}</span>
-            </div>
-            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-              <span className="text-blue-200/90">Dikey Panel (Satır)</span>
-              <span className="text-right font-semibold">{summary.verticalCabinets}</span>
-            </div>
-            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-              <span className="text-blue-200/90">Toplam Panel Sayısı</span>
-              <span className="text-right font-semibold">{summary.totalCabinets}</span>
-            </div>
-            <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
-              <span className="text-blue-200/90">Gerekli Elektrik Gücü</span>
-              <span className="text-right font-semibold">{formatNumber(summary.maximumPower, 2)} kW</span>
-            </div>
-          </div>
         </div>
 
         {!isProductPanelOpen ? (

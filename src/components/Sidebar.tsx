@@ -39,7 +39,7 @@ export function Sidebar() {
       </div>
 
       <div>
-        <SceneSelector />
+          <SceneSelector />
       </div>
 
       <div className="rounded-3xl border border-white/10 bg-[#111111]/80 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">

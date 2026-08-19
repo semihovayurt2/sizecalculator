@@ -94,3 +94,4 @@ export interface SceneMeta {
   placeholder: ScenePlaceholder;
   peoplePosition: PeoplePosition;
 }
+

@@ -1,21 +1,12 @@
 import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
 import SceneSelector from './SceneSelector';
 import { useStore } from '../store/useStore';
-import { PDFButton } from './PDFButton';
 
 interface HeaderProps {
-  step: number;
-  setStep: (n: number) => void;
   is3DMode: boolean;
   onToggle3D: () => void;
+  onBackgroundSelected: (file: File) => void;
 }
-
-const steps = [
-  { id: 1, label: 'Senaryo Seçimi' },
-  { id: 2, label: 'Ekran Yapılandırması' },
-  { id: 3, label: 'Çıkış Yapılandırması' },
-];
 
 const pixelPitchOptions = ['P1', 'P1.25', 'P1.5', 'P1.86', 'P2', 'P2.5', 'P3', 'P4', 'P5'];
 const FRAME_ALLOWANCE_CM = 4;
@@ -43,31 +34,31 @@ function StepperInput({ label, value, min, step, suffix, onChange }: StepperInpu
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-semibold text-blue-200/90">{label}</label>
+      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">{label}</label>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => updateValue(value - step)}
-          className="h-8 w-8 rounded-md border border-white/25 bg-transparent text-lg leading-none text-blue-200/90 transition hover:border-[#60a5fa] hover:text-[#60a5fa]"
+          className="h-7 w-7 rounded-md border border-white/25 bg-transparent text-base leading-none text-blue-200/90 transition hover:border-[#60a5fa] hover:text-[#60a5fa]"
           aria-label={`${label} azalt`}
         >
           -
         </button>
-          <div className="flex h-8 flex-1 items-center rounded-md border border-white/25 bg-transparent px-3">
+          <div className="flex h-7 flex-1 items-center rounded-md border border-white/25 bg-transparent px-2">
           <input
             type="number"
             value={value}
             min={min}
             step={step}
             onChange={(e) => updateValue(Number(e.target.value))}
-            className="w-full border-none bg-transparent text-center text-base text-blue-200/90 outline-none placeholder:text-blue-200/35"
+            className="w-full border-none bg-transparent text-center text-[11px] text-blue-200/90 outline-none placeholder:text-blue-200/35"
           />
-          {suffix ? <span className="text-sm text-blue-200/90">{suffix}</span> : null}
+          {suffix ? <span className="text-[11px] text-blue-200/90">{suffix}</span> : null}
         </div>
         <button
           type="button"
           onClick={() => updateValue(value + step)}
-          className="h-8 w-8 rounded-md border border-white/25 bg-transparent text-lg leading-none text-blue-200/90 transition hover:border-[#60a5fa] hover:text-[#60a5fa]"
+          className="h-7 w-7 rounded-md border border-white/25 bg-transparent text-base leading-none text-blue-200/90 transition hover:border-[#60a5fa] hover:text-[#60a5fa]"
           aria-label={`${label} artır`}
         >
           +
@@ -77,10 +68,16 @@ function StepperInput({ label, value, min, step, suffix, onChange }: StepperInpu
   );
 }
 
-export function Header({ step, setStep, is3DMode, onToggle3D }: HeaderProps) {
+export function Header({ is3DMode, onToggle3D, onBackgroundSelected }: HeaderProps) {
+  const backgroundInputRef = React.useRef<HTMLInputElement | null>(null);
   const config = useStore((s) => s.config);
+  const summary = useStore((s) => s.summary);
   const setConfig = useStore((s) => s.setConfig);
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const formatNumber = (value: number, fractionDigits = 0) =>
+    new Intl.NumberFormat('tr-TR', {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
 
   const panelWidthCm = Number((config.cabinetWidth * 100).toFixed(1));
   const panelHeightCm = Number((config.cabinetHeight * 100).toFixed(1));
@@ -110,82 +107,43 @@ export function Header({ step, setStep, is3DMode, onToggle3D }: HeaderProps) {
   }, [autoHeightM, autoWidthM, config.height, config.width, setConfig]);
 
   return (
-    <header className="pointer-events-none absolute inset-x-0 -top-2 z-30">
-      <div className="mx-auto max-w-[1800px] px-4 pt-0 sm:px-6 lg:px-10">
-        <div
-          className="pointer-events-auto"
-          onMouseLeave={() => setIsExpanded(false)}
-        >
-          <div className="flex items-center justify-between gap-4 bg-transparent px-5 py-3 shadow-none backdrop-blur-none">
+    <header className="pointer-events-none absolute inset-y-0 left-0 z-30 w-[clamp(185px,20vw,245px)]">
+      <div className="pointer-events-auto flex h-full flex-col rounded-xl border border-white/10 bg-black/20 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] sm:px-4">
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-2">
           <div className="flex items-center gap-4">
-            <img src={logoImage} alt="Dinamo logo" className="h-24 w-24 rounded-md object-contain" />
+            <img src={logoImage} alt="Dinamo logo" className="h-12 w-12 rounded-md object-contain" />
           </div>
 
-          <nav className="flex-1">
-            <ul className="flex items-center justify-center gap-6">
-              {steps.map((s) => (
-                <li key={s.id} className="relative">
-                  <button
-                    type="button"
-                    onMouseEnter={() => {
-                      setStep(s.id);
-                      setIsExpanded(true);
-                    }}
-                    className={`px-3 py-2 text-sm font-semibold ${step === s.id ? 'text-[#60a5fa]' : 'text-blue-200/90'}`}
-                  >
-                    {s.label}
-                  </button>
-                  {step === s.id ? (
-                    <motion.div
-                      layoutId="active-underline"
-                      className="absolute left-0 right-0 mx-auto mt-0.5 h-1 w-10 rounded-full bg-[#60a5fa]"
-                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    />
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onToggle3D}
-              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-                is3DMode
-                  ? 'border-[#60a5fa]/80 bg-[#60a5fa]/10 text-[#60a5fa]'
-                  : 'border-white/10 bg-black/20 text-blue-200/90 hover:bg-black/30'
-              }`}
-            >
-              3D
-            </button>
-          </div>
-          </div>
-
-          <div
-            className={`pointer-events-auto mx-auto mt-2 w-[min(520px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#0b0b0b]/20 backdrop-blur-[2px] transition-all duration-100 ease-out sm:w-[min(580px,calc(100vw-3rem))] ${
-              !isExpanded
-                ? 'pointer-events-none max-h-0 overflow-hidden opacity-0'
-                : 'max-h-[720px] overflow-visible opacity-100'
-            }`}
+          <button
+            type="button"
+            onClick={() => {
+              onToggle3D();
+              backgroundInputRef.current?.click();
+            }}
+            className="rounded-lg border border-white/10 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-blue-200/90 transition hover:bg-black/30"
           >
-            <div className="p-2.5 pt-3">
-              {step === 1 ? (
-                <>
-                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-blue-200/90">Senaryo Seçimi</h3>
-                  <div className="grid gap-3 md:grid-cols-2">
+            Kendi Projeni Yap
+          </button>
+          <input
+            ref={backgroundInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onBackgroundSelected(file);
+              event.target.value = '';
+            }}
+          />
+
+        </div>
+
+        <div className="mt-2 min-h-0 flex-1 overflow-hidden rounded-xl border border-white/10 bg-transparent">
+          <div className="space-y-3 p-2 pt-2">
+              <section>
+                  <div className="grid gap-2">
                     <div>
                       <SceneSelector light />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Unit</label>
-                      <select
-                        value={config.unit}
-                        onChange={() => setConfig({ unit: 'cm' })}
-                        className={selectFieldClassName}
-                      >
-                        <option value="cm">cm</option>
-                      </select>
                     </div>
                     <StepperInput
                       label="Wall Width"
@@ -204,19 +162,17 @@ export function Header({ step, setStep, is3DMode, onToggle3D }: HeaderProps) {
                       onChange={(v) => setConfig({ wallHeightCm: v })}
                     />
                   </div>
-                </>
-              ) : null}
+              </section>
 
-              {step === 2 ? (
-                <>
-                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-blue-200/90">Display Configuration</h3>
-                  <div className="grid gap-3 md:grid-cols-3">
+                <section className="border-t border-white/10 pt-3">
+                  <h3 className="mb-2 text-center text-sm font-semibold text-blue-200/90">Display Configuration</h3>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Select Product</label>
+                      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Select Product</label>
                       <select
                         value={config.pixelPitch}
                         onChange={(e) => setConfig({ pixelPitch: e.target.value })}
-                        className={selectFieldClassName}
+                        className={`${selectFieldClassName} h-8 text-[11px]`}
                       >
                         {pixelPitchOptions.map((pitch) => (
                           <option key={pitch} value={pitch}>
@@ -226,30 +182,22 @@ export function Header({ step, setStep, is3DMode, onToggle3D }: HeaderProps) {
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Sending Box</label>
-                      <select className={selectFieldClassName}>
+                      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Sending Box</label>
+                      <select className={`${selectFieldClassName} h-8 text-[11px]`}>
                         <option>VX400</option>
                         <option>VX600</option>
                         <option>MX30</option>
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Voltage</label>
-                      <select className={selectFieldClassName}>
+                      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Voltage</label>
+                      <select className={`${selectFieldClassName} h-8 text-[11px]`}>
                         <option>220V</option>
                         <option>110V</option>
                       </select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Columns (Auto)</label>
-                      <div className="flex h-10 items-center px-3 font-medium text-blue-200/90">{columns}</div>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Rows (Auto)</label>
-                      <div className="flex h-10 items-center px-3 font-medium text-blue-200/90">{rows}</div>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Panel Type</label>
+                      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Panel Type</label>
                       <select
                         value={selectedPanelValue}
                         onChange={(e) => {
@@ -268,7 +216,7 @@ export function Header({ step, setStep, is3DMode, onToggle3D }: HeaderProps) {
                             wallHeightCm: Number(adjustedWallHeight.toFixed(1)),
                           });
                         }}
-                        className={selectFieldClassName}
+                        className={`${selectFieldClassName} h-8 text-[11px]`}
                       >
                         {panelTypeOptions.map((panelType) => (
                           <option key={`${panelType.widthCm}x${panelType.heightCm}`} value={`${panelType.widthCm}x${panelType.heightCm}`}>
@@ -277,67 +225,43 @@ export function Header({ step, setStep, is3DMode, onToggle3D }: HeaderProps) {
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Power Cable Routing Mode</label>
-                      <select
-                        value={config.mountType}
-                        onChange={(e) => setConfig({ mountType: e.target.value as typeof config.mountType })}
-                        className={selectFieldClassName}
-                      >
-                        <option value="Wall">Vertical priority</option>
-                        <option value="Hanging">Horizontal priority</option>
-                        <option value="Truss">Balanced</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Network Cable Routing Mode</label>
-                      <select className={selectFieldClassName}>
-                        <option>Vertical priority</option>
-                        <option>Horizontal priority</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Starting Point</label>
-                      <select className={selectFieldClassName}>
-                        <option>Top-left</option>
-                        <option>Top-right</option>
-                        <option>Bottom-left</option>
-                        <option>Bottom-right</option>
-                      </select>
-                    </div>
                   </div>
-                </>
-              ) : null}
+              </section>
 
-              {step === 3 ? (
-                <>
-                  <h3 className="mb-3 text-center text-[1.2rem] font-semibold text-blue-200/90">Export to PDF</h3>
-                  <div className="mx-auto max-w-4xl space-y-4">
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-blue-200/90">File Name</label>
-                      <input
-                        type="text"
-                        defaultValue={config.projectName}
-                        className="h-10 w-full rounded-md border border-white/20 bg-transparent px-3 text-blue-200/90 outline-none focus:border-[#60a5fa]"
-                        placeholder="please enter"
-                      />
+              <section className="border-t border-white/10 pt-3">
+                <div className="rounded-xl border border-white/10 bg-black/20 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">Teknik Bilgi</p>
+                  <div className="mt-1.5 space-y-1 text-blue-200/90">
+                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                      <span>İnsan Silüeti Boyu</span>
+                      <span className="text-right font-semibold">1.80 m</span>
                     </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-blue-200/90">
-                      <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> Home Page</label>
-                      <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> LED Wall Display</label>
-                      <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> LED Wall information</label>
-                      <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> Product Specification</label>
-                      <label className="inline-flex items-center gap-2"><input type="checkbox" defaultChecked /> Data Cable Layout Diagram</label>
+                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                      <span>Ürün Çözünürlüğü</span>
+                      <span className="text-right font-semibold">{summary.resolution} px</span>
                     </div>
-                    <div className="pt-2 flex justify-center">
-                      <PDFButton />
+                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                      <span>Yatay Panel (Sütun)</span>
+                      <span className="text-right font-semibold">{summary.horizontalCabinets}</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                      <span>Dikey Panel (Satır)</span>
+                      <span className="text-right font-semibold">{summary.verticalCabinets}</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                      <span>Toplam Panel Sayısı</span>
+                      <span className="text-right font-semibold">{summary.totalCabinets}</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                      <span>Gerekli Elektrik Gücü</span>
+                      <span className="text-right font-semibold">{formatNumber(summary.maximumPower, 2)} kW</span>
                     </div>
                   </div>
-                </>
-              ) : null}
+                </div>
+              </section>
+
             </div>
           </div>
-        </div>
       </div>
     </header>
   );

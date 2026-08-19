@@ -5,9 +5,21 @@ import { ProductTable } from './components/ProductTable';
 import ScenePanel from './components/ScenePanel';
 
 function App() {
-  const [step, setStep] = React.useState(1);
   const [isProductPanelOpen, setIsProductPanelOpen] = React.useState(false);
   const [is3DMode, setIs3DMode] = React.useState(false);
+  const [customBackgroundUrl, setCustomBackgroundUrl] = React.useState<string | null>(null);
+
+  const onBackgroundSelected = (file: File) => {
+    const nextUrl = URL.createObjectURL(file);
+    setCustomBackgroundUrl((previousUrl) => {
+      if (previousUrl) URL.revokeObjectURL(previousUrl);
+      return nextUrl;
+    });
+  };
+
+  React.useEffect(() => () => {
+    if (customBackgroundUrl) URL.revokeObjectURL(customBackgroundUrl);
+  }, [customBackgroundUrl]);
 
   return (
     <div className="min-h-screen bg-background text-text overflow-hidden">
@@ -17,14 +29,14 @@ function App() {
             isProductPanelOpen={isProductPanelOpen}
             onToggleProductPanel={() => setIsProductPanelOpen((value) => !value)}
             is3DMode={is3DMode}
+            customBackgroundUrl={customBackgroundUrl}
           />
         </div>
 
         <Header
-          step={step}
-          setStep={setStep}
           is3DMode={is3DMode}
           onToggle3D={() => setIs3DMode((value) => !value)}
+          onBackgroundSelected={onBackgroundSelected}
         />
 
         <div className="pointer-events-none absolute inset-0 z-40">
