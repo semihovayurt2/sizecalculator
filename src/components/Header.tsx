@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
+import { Home } from 'lucide-react';
 import SceneSelector from './SceneSelector';
 import { useStore } from '../store/useStore';
 
 interface HeaderProps {
-  is3DMode: boolean;
-  onToggle3D: () => void;
   onBackgroundSelected: (file: File) => void;
+  isProductPanelOpen: boolean;
+  onToggleProductPanel: () => void;
 }
 
 const pixelPitchOptions = ['P1', 'P1.25', 'P1.5', 'P1.86', 'P2', 'P2.5', 'P3', 'P4', 'P5'];
@@ -68,11 +69,25 @@ function StepperInput({ label, value, min, step, suffix, onChange }: StepperInpu
   );
 }
 
-export function Header({ is3DMode, onToggle3D, onBackgroundSelected }: HeaderProps) {
+export function Header({
+  onBackgroundSelected,
+  isProductPanelOpen,
+  onToggleProductPanel,
+}: HeaderProps) {
   const backgroundInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [panelAction, setPanelAction] = React.useState<'remove' | 'rename' | null>(null);
+  const [renameValue, setRenameValue] = React.useState('');
   const config = useStore((s) => s.config);
   const summary = useStore((s) => s.summary);
   const setConfig = useStore((s) => s.setConfig);
+  const panels = useStore((s) => s.panels);
+  const activePanelId = useStore((s) => s.activePanelId);
+  const panelSelectionVisible = useStore((s) => s.panelSelectionVisible);
+  const activePanel = panels.find((panel) => panel.id === activePanelId) ?? panels[0];
+  const addPanel = useStore((s) => s.addPanel);
+  const clearPanelSelection = useStore((s) => s.clearPanelSelection);
+  const renamePanel = useStore((s) => s.renamePanel);
+  const removePanel = useStore((s) => s.removePanel);
   const formatNumber = (value: number, fractionDigits = 0) =>
     new Intl.NumberFormat('tr-TR', {
       minimumFractionDigits: fractionDigits,
@@ -108,22 +123,30 @@ export function Header({ is3DMode, onToggle3D, onBackgroundSelected }: HeaderPro
 
   return (
     <header className="pointer-events-none absolute inset-y-0 left-0 z-30 w-[clamp(185px,20vw,245px)]">
-      <div className="pointer-events-auto flex h-full flex-col rounded-xl border border-white/10 bg-black/20 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] sm:px-4">
+      <div className="pointer-events-auto flex h-full w-[clamp(185px,20vw,245px)] flex-col overflow-visible rounded-xl border border-white/10 bg-black/20 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] sm:px-4">
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-2">
           <div className="flex items-center gap-4">
             <img src={logoImage} alt="Dinamo logo" className="h-12 w-12 rounded-md object-contain" />
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              onToggle3D();
-              backgroundInputRef.current?.click();
-            }}
-            className="rounded-lg border border-white/10 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-blue-200/90 transition hover:bg-black/30"
-          >
-            Kendi Projeni Yap
-          </button>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={addPanel}
+              className="whitespace-nowrap rounded-md border border-[#60a5fa]/60 bg-black/20 px-2 py-1.5 text-[10px] font-semibold text-blue-200/90 transition hover:bg-[#172033]"
+            >
+              + Ekran
+            </button>
+            <button
+              type="button"
+              onClick={() => setPanelAction('remove')}
+              disabled={panels.length === 1}
+              className="whitespace-nowrap rounded-md border border-red-300/40 bg-black/20 px-2 py-1.5 text-[10px] font-semibold text-red-200/90 transition hover:bg-red-950/30 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Sil
+            </button>
+          </div>
+
           <input
             ref={backgroundInputRef}
             type="file"
@@ -138,12 +161,42 @@ export function Header({ is3DMode, onToggle3D, onBackgroundSelected }: HeaderPro
 
         </div>
 
-        <div className="mt-2 min-h-0 flex-1 overflow-hidden rounded-xl border border-white/10 bg-transparent">
-          <div className="space-y-3 p-2 pt-2">
-              <section>
+        <div className="flex flex-wrap gap-1.5 border-b border-white/10 py-2">
+          <button
+            type="button"
+            onClick={clearPanelSelection}
+            className="flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-blue-200/80 transition hover:border-[#60a5fa] hover:text-[#93c5fd]"
+            aria-label="Ana ekrana dön"
+            title="Ana ekrana dön"
+          >
+            <Home className="h-3.5 w-3.5" />
+          </button>
+          {panels.map((panel) => (
+            <button
+              key={panel.id}
+              type="button"
+              onClick={clearPanelSelection}
+              className={`rounded-md border px-2 py-1 text-left text-[10px] ${panel.id === activePanelId ? 'border-[#60a5fa] text-[#93c5fd]' : 'border-white/10 text-blue-200/70'}`}
+            >
+              {panel.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-2 min-h-0 flex-1 overflow-visible rounded-xl border border-white/10 bg-transparent">
+              <div className="flex min-w-0 flex-col gap-3 p-2 pt-2">
+                <section className="min-w-0">
                   <div className="grid gap-2">
                     <div>
-                      <SceneSelector light />
+                      <SceneSelector
+                        light
+                        activePanelName={panelSelectionVisible ? activePanel?.name : undefined}
+                        onEditPanelName={() => {
+                          setRenameValue(activePanel?.name ?? '');
+                          setPanelAction('rename');
+                        }}
+                        onAddScene={() => backgroundInputRef.current?.click()}
+                      />
                     </div>
                     <StepperInput
                       label="Wall Width"
@@ -164,7 +217,7 @@ export function Header({ is3DMode, onToggle3D, onBackgroundSelected }: HeaderPro
                   </div>
               </section>
 
-                <section className="border-t border-white/10 pt-3">
+                <section className="min-w-0 border-t border-white/10 pt-3">
                   <h3 className="mb-2 text-center text-sm font-semibold text-blue-200/90">Display Configuration</h3>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -228,7 +281,7 @@ export function Header({ is3DMode, onToggle3D, onBackgroundSelected }: HeaderPro
                   </div>
               </section>
 
-              <section className="border-t border-white/10 pt-3">
+              <section className="min-w-0 border-t border-white/10 pt-3">
                 <div className="rounded-xl border border-white/10 bg-black/20 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px]">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">Teknik Bilgi</p>
                   <div className="mt-1.5 space-y-1 text-blue-200/90">
@@ -260,9 +313,56 @@ export function Header({ is3DMode, onToggle3D, onBackgroundSelected }: HeaderPro
                 </div>
               </section>
 
+              <section className="min-w-0 border-t border-white/10 pt-3">
+                {!isProductPanelOpen ? (
+                  <button
+                    type="button"
+                    onClick={onToggleProductPanel}
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
+                  >
+                    Ürün Listesi
+                  </button>
+                ) : null}
+              </section>
+
             </div>
           </div>
       </div>
+
+      {panelAction ? (
+        <div className="pointer-events-auto absolute inset-0 z-[60] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm">
+          <div className="w-full max-w-[280px] rounded-xl border border-white/15 bg-[#0d0d0d] p-3 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-blue-100">{panelAction === 'remove' ? 'Ekran sil' : 'Ekran adını düzenle'}</h2>
+              <button type="button" onClick={() => setPanelAction(null)} className="text-lg text-white/60">×</button>
+            </div>
+            {panelAction === 'remove' ? (
+              <div className="space-y-1.5">
+                {panels.map((panel) => (
+                  <button
+                    key={panel.id}
+                    type="button"
+                    onClick={() => { removePanel(panel.id); setPanelAction(null); }}
+                    className="block w-full rounded-md border border-white/10 px-3 py-2 text-left text-xs text-blue-100 hover:bg-red-950/30"
+                  >
+                    {panel.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <form onSubmit={(event) => { event.preventDefault(); renamePanel(activePanelId, renameValue); setPanelAction(null); }}>
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  className="h-9 w-full rounded-md border border-white/15 bg-black px-2 text-sm text-white outline-none focus:border-[#60a5fa]"
+                />
+                <button type="submit" className="mt-2 w-full rounded-md bg-[#60a5fa] px-3 py-2 text-xs font-semibold text-[#06101f]">Kaydet</button>
+              </form>
+            )}
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

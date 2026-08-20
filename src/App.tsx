@@ -3,11 +3,18 @@ import { motion } from 'framer-motion';
 import Header from './components/Header';
 import { ProductTable } from './components/ProductTable';
 import ScenePanel from './components/ScenePanel';
+import { useStore } from './store/useStore';
 
 function App() {
   const [isProductPanelOpen, setIsProductPanelOpen] = React.useState(false);
-  const [is3DMode, setIs3DMode] = React.useState(false);
   const [customBackgroundUrl, setCustomBackgroundUrl] = React.useState<string | null>(null);
+  const [panelMediaById, setPanelMediaById] = React.useState<Record<string, { url: string; kind: 'image' | 'video' }>>({});
+  const panelMediaByIdRef = React.useRef(panelMediaById);
+  panelMediaByIdRef.current = panelMediaById;
+  const activePanelId = useStore((state) => state.activePanelId);
+  const panels = useStore((state) => state.panels);
+  const panelMedia = panelMediaById[activePanelId] ?? null;
+  const is3DMode = true;
 
   const onBackgroundSelected = (file: File) => {
     const nextUrl = URL.createObjectURL(file);
@@ -21,6 +28,53 @@ function App() {
     if (customBackgroundUrl) URL.revokeObjectURL(customBackgroundUrl);
   }, [customBackgroundUrl]);
 
+  React.useEffect(() => () => {
+    Object.values(panelMediaByIdRef.current).forEach((media) => URL.revokeObjectURL(media.url));
+  }, []);
+
+  React.useEffect(() => {
+    const panelIds = new Set(panels.map((panel) => panel.id));
+    setPanelMediaById((mediaById) => {
+      const nextMediaById = { ...mediaById };
+      Object.keys(nextMediaById).forEach((panelId) => {
+        if (!panelIds.has(panelId)) {
+          URL.revokeObjectURL(nextMediaById[panelId].url);
+          delete nextMediaById[panelId];
+        }
+      });
+      return nextMediaById;
+    });
+  }, [panels]);
+
+  const onPanelMediaSelected = (file: File) => {
+    const kind: 'image' | 'video' | null = file.type.startsWith('image/')
+      ? 'image'
+      : file.type.startsWith('video/')
+        ? 'video'
+        : null;
+
+    if (!kind) {
+      return;
+    }
+
+    const nextUrl = URL.createObjectURL(file);
+    setPanelMediaById((mediaById) => {
+      const previousMedia = mediaById[activePanelId];
+      if (previousMedia) URL.revokeObjectURL(previousMedia.url);
+      return { ...mediaById, [activePanelId]: { url: nextUrl, kind } };
+    });
+  };
+
+  const clearPanelMedia = () => {
+    setPanelMediaById((mediaById) => {
+      const previousMedia = mediaById[activePanelId];
+      if (previousMedia) URL.revokeObjectURL(previousMedia.url);
+      const nextMediaById = { ...mediaById };
+      delete nextMediaById[activePanelId];
+      return nextMediaById;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background text-text overflow-hidden">
       <div className="relative min-h-screen">
@@ -30,13 +84,17 @@ function App() {
             onToggleProductPanel={() => setIsProductPanelOpen((value) => !value)}
             is3DMode={is3DMode}
             customBackgroundUrl={customBackgroundUrl}
+            panelMedia={panelMedia}
+            panelMediaById={panelMediaById}
+            onPanelMediaSelected={onPanelMediaSelected}
+            onClearPanelMedia={clearPanelMedia}
           />
         </div>
 
         <Header
-          is3DMode={is3DMode}
-          onToggle3D={() => setIs3DMode((value) => !value)}
           onBackgroundSelected={onBackgroundSelected}
+          isProductPanelOpen={isProductPanelOpen}
+          onToggleProductPanel={() => setIsProductPanelOpen((value) => !value)}
         />
 
         <div className="pointer-events-none absolute inset-0 z-40">

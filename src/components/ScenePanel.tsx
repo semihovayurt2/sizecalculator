@@ -36,29 +36,39 @@ interface ScenePanelProps {
   onToggleProductPanel: () => void;
   is3DMode: boolean;
   customBackgroundUrl: string | null;
+  panelMedia: { url: string; kind: 'image' | 'video' } | null;
+  panelMediaById: Record<string, { url: string; kind: 'image' | 'video' }>;
+  onPanelMediaSelected: (file: File) => void;
+  onClearPanelMedia: () => void;
 }
 
-export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode, customBackgroundUrl }: ScenePanelProps) {
+export function ScenePanel({ isProductPanelOpen, is3DMode, customBackgroundUrl, panelMedia, panelMediaById, onPanelMediaSelected, onClearPanelMedia }: ScenePanelProps) {
   const scenes = import.meta.glob('../assets/scenes/*/scene.json', { eager: true, query: '?json' }) as SceneMap;
   const bgMap = import.meta.glob('../assets/scenes/*/background.svg', { eager: true, query: '?url' }) as Record<string, string>;
   const peopleImage = new URL('../../people-silhouette.png', import.meta.url).href;
 
   const selected = useStore((s) => s.selectedScene);
   const config = useStore((s) => s.config);
+  const panels = useStore((s) => s.panels);
+  const activePanelId = useStore((s) => s.activePanelId);
+  const activePanel = panels.find((panel) => panel.id === activePanelId);
+  const selectPanel = useStore((s) => s.selectPanel);
+  const clearPanelSelection = useStore((s) => s.clearPanelSelection);
+  const panelSelectionVisible = useStore((s) => s.panelSelectionVisible);
 
   const [meta, setMeta] = useState<SceneMeta | null>(null);
   const [bgUrl, setBgUrl] = useState<string | null>(null);
-  const [panelMedia, setPanelMedia] = useState<{ url: string; kind: 'image' | 'video' } | null>(null);
   const [frameSize, setFrameSize] = useState({ width: META_BASE_WIDTH, height: META_BASE_HEIGHT });
   const [peopleX, setPeopleX] = useState(META_BASE_WIDTH / 2);
   const [isPeopleDragging, setIsPeopleDragging] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const mediaInputRef = useRef<HTMLInputElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const peopleDragRef = useRef<{ startClientX: number; startX: number } | null>(null);
-  const [panelCorners, setPanelCorners] = useState<PanelCorners | null>(null);
+  const [panelCornersById, setPanelCornersById] = useState<Record<string, PanelCorners>>({});
+  const panelSceneByIdRef = useRef<Record<string, string | null>>({});
   const [cornerDragIndex, setCornerDragIndex] = useState<number | null>(null);
   const [cornersVisible, setCornersVisible] = useState(false);
+  const mediaInputRef = useRef<HTMLInputElement | null>(null);
   const normalizePath = (path: string) => path.replace(/\\/g, '/');
   useEffect(() => {
     if (!selected) {
@@ -109,54 +119,6 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
     return () => window.removeEventListener('resize', updateViewportSize);
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (panelMedia) {
-        URL.revokeObjectURL(panelMedia.url);
-      }
-    };
-  }, [panelMedia]);
-
-  const onMediaSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    const kind: 'image' | 'video' | null = file.type.startsWith('image/')
-      ? 'image'
-      : file.type.startsWith('video/')
-        ? 'video'
-        : null;
-
-    if (!kind) {
-      event.target.value = '';
-      return;
-    }
-
-    const nextUrl = URL.createObjectURL(file);
-    setPanelMedia((prev) => {
-      if (prev) {
-        URL.revokeObjectURL(prev.url);
-      }
-      return { url: nextUrl, kind };
-    });
-    event.target.value = '';
-  };
-
-  const clearPanelMedia = () => {
-    setPanelMedia((prev) => {
-      if (prev) {
-        URL.revokeObjectURL(prev.url);
-      }
-      return null;
-    });
-
-    if (mediaInputRef.current) {
-      mediaInputRef.current.value = '';
-    }
-  };
-
   const onPeoplePointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
     event.preventDefault();
     peopleDragRef.current = { startClientX: event.clientX, startX: peopleX };
@@ -185,18 +147,30 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
 
   useEffect(() => {
     if (!basePlaceholder) {
-      setPanelCorners(null);
       setCornersVisible(false);
       return;
     }
 
-    setPanelCorners([
-      { x: basePlaceholder.x / activeFrameWidth, y: basePlaceholder.y / activeFrameHeight },
-      { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth, y: basePlaceholder.y / activeFrameHeight },
-      { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight },
-      { x: basePlaceholder.x / activeFrameWidth, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight },
-    ]);
-  }, [activeFrameHeight, activeFrameWidth, selected, bgUrl]);
+    const panelIndex = panels.findIndex((panel) => panel.id === activePanelId);
+    const offset = activePanelId === 'panel-1' ? 0 : Math.max(1, panelIndex) * 0.08;
+    const previousScene = panelSceneByIdRef.current[activePanelId];
+    const sceneChanged = previousScene !== undefined && previousScene !== selected;
+    panelSceneByIdRef.current[activePanelId] = selected ?? null;
+    setPanelCornersById((cornersById) => ({
+      ...cornersById,
+      [activePanelId]: sceneChanged ? [
+        { x: basePlaceholder.x / activeFrameWidth, y: basePlaceholder.y / activeFrameHeight },
+        { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth, y: basePlaceholder.y / activeFrameHeight },
+        { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight },
+        { x: basePlaceholder.x / activeFrameWidth, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight },
+      ] : cornersById[activePanelId] ?? [
+      { x: basePlaceholder.x / activeFrameWidth + offset, y: basePlaceholder.y / activeFrameHeight + offset },
+      { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth + offset, y: basePlaceholder.y / activeFrameHeight + offset },
+      { x: (basePlaceholder.x + basePlaceholder.width) / activeFrameWidth + offset, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight + offset },
+      { x: basePlaceholder.x / activeFrameWidth + offset, y: (basePlaceholder.y + basePlaceholder.height) / activeFrameHeight + offset },
+      ],
+    }));
+  }, [activeFrameHeight, activeFrameWidth, selected, bgUrl, activePanelId, panels]);
 
   useEffect(() => {
     if (cornerDragIndex === null) {
@@ -214,11 +188,15 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
         x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
         y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
       };
-      setPanelCorners((corners) => {
+      setPanelCornersById((cornersById) => {
+        const corners = cornersById[activePanelId];
         if (!corners) {
-          return corners;
+          return cornersById;
         }
-        return corners.map((corner, index) => index === cornerDragIndex ? nextPoint : corner) as PanelCorners;
+        return {
+          ...cornersById,
+          [activePanelId]: corners.map((corner, index) => index === cornerDragIndex ? nextPoint : corner) as PanelCorners,
+        };
       });
     };
 
@@ -232,6 +210,12 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
       window.removeEventListener('pointercancel', stopDragging);
     };
   }, [cornerDragIndex]);
+
+  useEffect(() => {
+    if (!panelSelectionVisible) {
+      setCornersVisible(false);
+    }
+  }, [panelSelectionVisible]);
 
   useEffect(() => {
     if (!isPeopleDragging) {
@@ -278,7 +262,7 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
     );
   }
 
-  const activeCorners = panelCorners ?? [
+  const activeCorners = panelCornersById[activePanelId] ?? [
     { x: basePlaceholder!.x / activeFrameWidth, y: basePlaceholder!.y / activeFrameHeight },
     { x: (basePlaceholder!.x + basePlaceholder!.width) / activeFrameWidth, y: basePlaceholder!.y / activeFrameHeight },
     { x: (basePlaceholder!.x + basePlaceholder!.width) / activeFrameWidth, y: (basePlaceholder!.y + basePlaceholder!.height) / activeFrameHeight },
@@ -346,13 +330,84 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
 
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-black" onClick={clearPanelSelection}>
       <div
         ref={frameRef}
         className="absolute left-1/2 top-1/2"
+        onClick={(event) => { event.stopPropagation(); clearPanelSelection(); }}
         style={{ width: `${fittedFrameWidth}px`, height: `${fittedFrameHeight}px`, transform: 'translate(-50%, -50%)' }}
       >
         <img src={bgUrl} alt={meta.name} className="absolute inset-0 z-0 h-full w-full object-contain" />
+
+        {panels.filter((panel) => panel.id !== activePanelId).map((panel) => {
+          const panelCorners = panelCornersById[panel.id];
+          if (!panelCorners) return null;
+          const panelMinX = Math.min(...panelCorners.map((corner) => corner.x));
+          const panelMaxX = Math.max(...panelCorners.map((corner) => corner.x));
+          const panelMinY = Math.min(...panelCorners.map((corner) => corner.y));
+          const panelMaxY = Math.max(...panelCorners.map((corner) => corner.y));
+
+          return (
+            <React.Fragment key={panel.id}>
+              <div className="pointer-events-none absolute inset-0 z-10">
+                <Canvas
+                  orthographic
+                  camera={{
+                    position: [0, 0, 7.5],
+                    left: -frameAspectRatio,
+                    right: frameAspectRatio,
+                    top: 1,
+                    bottom: -1,
+                    near: 0.1,
+                    far: 100,
+                  }}
+                  gl={{ alpha: true }}
+                  style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
+                >
+                  <ambientLight intensity={0.9} />
+                  <directionalLight position={[3, 5, 2]} intensity={1.6} color="#dbeafe" />
+                  <LedScene
+                    screenCenterX={0.5}
+                    screenCenterY={0.5}
+                    frameAspectRatio={frameAspectRatio}
+                    screenWidthRatio={1}
+                    screenHeightRatio={1}
+                    panelCorners={panelCorners}
+                    panelMediaUrl={panelMediaById[panel.id]?.kind === 'image' ? panelMediaById[panel.id].url : undefined}
+                    configOverride={panel.config}
+                  />
+                </Canvas>
+              </div>
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); selectPanel(panel.id); setCornersVisible(true); }}
+                className="pointer-events-auto absolute z-[35] bg-transparent text-left"
+                style={{
+                  left: `${panelMinX * 100}%`,
+                  top: `${panelMinY * 100}%`,
+                  width: `${(panelMaxX - panelMinX) * 100}%`,
+                  height: `${(panelMaxY - panelMinY) * 100}%`,
+                }}
+              >
+                <span className="pointer-events-none absolute left-1 top-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold text-blue-100">
+                  {panel.name}
+                </span>
+              </button>
+            </React.Fragment>
+          );
+        })}
+
+        {activePanel ? (
+          <span
+            className="pointer-events-none absolute z-[45] rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold text-blue-100"
+            style={{
+              left: `${Math.min(...activeCorners.map((corner) => corner.x)) * 100 + 0.5}%`,
+              top: `${Math.min(...activeCorners.map((corner) => corner.y)) * 100 + 0.5}%`,
+            }}
+          >
+            {activePanel.name}
+          </span>
+        ) : null}
 
         {cornersVisible ? activeCorners.map((corner, index) => (
           <button
@@ -384,20 +439,20 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
         >
           <div className="relative h-full w-full overflow-hidden">
             <div
-              className={`absolute overflow-hidden ${is3DMode ? 'z-20 inset-0 bg-transparent' : exceedsWall ? 'bg-red-400/80' : 'bg-[#8a8f98]'}`}
-              onClick={() => setCornersVisible((visible) => !visible)}
+              className="absolute z-20 inset-0 overflow-hidden bg-transparent"
+              onClick={(event) => { event.stopPropagation(); selectPanel(activePanelId); setCornersVisible(true); }}
               style={{
-                left: is3DMode ? 0 : `${(ledLeft / activeFrameWidth) * 100}%`,
-                top: is3DMode ? 0 : `${(ledTop / activeFrameHeight) * 100}%`,
-                width: is3DMode ? '100%' : `${(ledWidth / activeFrameWidth) * 100}%`,
-                height: is3DMode ? '100%' : `${(ledHeight / activeFrameHeight) * 100}%`,
+                left: 0,
+                top: 0,
+                width: '100%',
+                height: '100%',
                 maxWidth: '100%',
                 maxHeight: '100%',
                 boxSizing: 'border-box',
                 contain: 'paint',
                 padding: '0px',
-                clipPath: is3DMode ? 'none' : `polygon(${cornerPolygon})`,
-                border: is3DMode ? '0px' : `4px solid ${exceedsWall ? 'rgba(248,113,113,0.8)' : '#8a8f98'}`,
+                clipPath: 'none',
+                border: '0px',
               }}
             >
               {is3DMode ? (
@@ -427,10 +482,16 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
                       screenHeightRatio={ledHeight / activeFrameHeight}
                       panelCorners={activeCorners}
                       onPanelDrag={(delta) => {
-                        setPanelCorners((corners) => corners?.map((corner) => ({
-                          x: corner.x + delta.x,
-                          y: corner.y + delta.y,
-                        })) as PanelCorners);
+                        setPanelCornersById((cornersById) => {
+                          const corners = cornersById[activePanelId];
+                          return corners ? {
+                            ...cornersById,
+                            [activePanelId]: corners.map((corner) => ({
+                              x: corner.x + delta.x,
+                              y: corner.y + delta.y,
+                            })) as PanelCorners,
+                          } : cornersById;
+                        });
                       }}
                       panelMediaUrl={panelMedia?.kind === 'image' ? panelMedia.url : undefined}
                     />
@@ -438,7 +499,7 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
                 </div>
               ) : (
               <div
-                  className={`relative h-full w-full overflow-hidden ${exceedsWall ? 'border border-red-300/80' : ''} bg-[#0D0F12]`}
+                  className={`relative h-full w-full overflow-hidden ${exceedsWall ? 'border border-red-300/80' : ''} ${panelMedia ? 'bg-transparent' : 'bg-[#0D0F12]'}`}
                   style={{
                     backgroundImage:
                       panelMedia
@@ -452,7 +513,7 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
                     panelMedia.kind === 'video' ? (
                       <video
                         src={panelMedia.url}
-                        className="absolute inset-0 h-full w-full object-contain"
+                        className="absolute inset-0 h-full w-full object-cover"
                         controls
                         autoPlay
                         loop
@@ -460,7 +521,7 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
                         playsInline
                       />
                     ) : (
-                      <img src={panelMedia.url} alt="panel-media" className="absolute inset-0 h-full w-full object-contain" />
+                      <img src={panelMedia.url} alt="panel-media" className="absolute inset-0 h-full w-full object-cover" />
                     )
                   ) : null}
 
@@ -499,52 +560,41 @@ export function ScenePanel({ isProductPanelOpen, onToggleProductPanel, is3DMode,
           ↔
         </span>
 
+      </div>
+
+      <div className={`fixed bottom-4 left-4 z-50 flex w-[clamp(135px,12vw,190px)] items-center gap-1.5 sm:left-6 lg:left-8 ${
+        isProductPanelOpen ? 'pointer-events-none opacity-40' : ''
+      }`}>
         <input
           ref={mediaInputRef}
           type="file"
           accept="image/*,video/*"
           className="hidden"
-          onChange={onMediaSelected}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onPanelMediaSelected(file);
+            event.target.value = '';
+          }}
         />
-      </div>
-
-      <div
-        className={`fixed bottom-4 left-4 flex w-[clamp(135px,12vw,190px)] flex-col gap-2 sm:left-6 lg:left-8 ${
-          isProductPanelOpen ? 'z-30 pointer-events-none' : 'z-50'
-        }`}
-      >
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="pointer-events-auto flex h-8 flex-1 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-black/20 px-3 text-[11px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
-            aria-label="Panel medyası yükle"
-            title="Resim veya video yükle"
-            onClick={() => mediaInputRef.current?.click()}
-          >
-            Medya Yükle
-          </button>
-
-          <button
-            type="button"
-            className="pointer-events-auto flex h-8 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Panel medyasını temizle"
-            title="Yüklenen medyayı kaldır"
-            onClick={clearPanelMedia}
-            disabled={!panelMedia}
-          >
-            Sil
-          </button>
-        </div>
-
-        {!isProductPanelOpen ? (
-          <button
-            type="button"
-            onClick={onToggleProductPanel}
-            className="pointer-events-auto w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
-          >
-            Ürün Listesi
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="pointer-events-auto flex h-8 min-w-0 flex-1 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
+          aria-label="Panel medyası yükle"
+          title="Resim veya video yükle"
+          onClick={() => mediaInputRef.current?.click()}
+        >
+          Medya Yükle
+        </button>
+        <button
+          type="button"
+          className="pointer-events-auto flex h-8 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Panel medyasını temizle"
+          title="Yüklenen medyayı kaldır"
+          onClick={onClearPanelMedia}
+          disabled={!panelMedia}
+        >
+          Sil
+        </button>
       </div>
 
     </div>

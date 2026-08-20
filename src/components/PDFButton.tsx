@@ -9,7 +9,7 @@ interface PDFButtonProps {
 export function PDFButton({ compact = false }: PDFButtonProps) {
   const config = useStore((state) => state.config);
   const summary = useStore((state) => state.summary);
-  const products = useStore((state) => state.products);
+  const panels = useStore((state) => state.panels);
 
   const handleExportPDF = async () => {
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -136,9 +136,6 @@ export function PDFButton({ compact = false }: PDFButtonProps) {
       pdf.line(leftMargin, y - 1.5, pageWidth - rightMargin, y - 1.5);
     });
 
-    y += 3;
-    drawSectionTitle('Urun Listesi');
-
     const columnWidths = [36, 28, 30, 16, contentWidth - (36 + 28 + 30 + 16)];
     const columnX = [
       leftMargin,
@@ -149,33 +146,49 @@ export function PDFButton({ compact = false }: PDFButtonProps) {
     ];
     const headers = ['Urun', 'Model', 'Kod', 'Miktar', 'Aciklama'];
 
-    ensureSpace(12);
-    drawTableHeader(y, columnX, columnWidths, headers);
-    y += 8;
+    const drawProductsTable = (title: string, products: typeof panels[number]['products']) => {
+      y += 3;
+      drawSectionTitle(title);
+      ensureSpace(12);
+      drawTableHeader(y, columnX, columnWidths, headers);
+      y += 8;
 
-    products.forEach((product) => {
-      const descriptionLines = pdf.splitTextToSize(product.description || '-', columnWidths[4] - 3);
-      const rowHeight = Math.max(7, descriptionLines.length * 5 + 2);
-      ensureSpace(rowHeight + 1);
+      products.forEach((product) => {
+        const descriptionLines = pdf.splitTextToSize(product.description || '-', columnWidths[4] - 3);
+        const rowHeight = Math.max(7, descriptionLines.length * 5 + 2);
+        ensureSpace(rowHeight + 1);
 
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      pdf.setTextColor(20, 20, 20);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(20, 20, 20);
 
-      pdf.text(String(product.product ?? '-'), columnX[0] + 1.5, y + 4.8);
-      pdf.text(String(product.model ?? '-'), columnX[1] + 1.5, y + 4.8);
-      pdf.text(String(product.code ?? '-'), columnX[2] + 1.5, y + 4.8);
-      pdf.text(`${String(product.quantity ?? '-')} ${product.unit ?? 'ADET'}`, columnX[3] + 1.5, y + 4.8);
-      pdf.text(descriptionLines, columnX[4] + 1.5, y + 4.8);
+        pdf.text(String(product.product ?? '-'), columnX[0] + 1.5, y + 4.8);
+        pdf.text(String(product.model ?? '-'), columnX[1] + 1.5, y + 4.8);
+        pdf.text(String(product.code ?? '-'), columnX[2] + 1.5, y + 4.8);
+        pdf.text(`${String(product.quantity ?? '-')} ${product.unit ?? 'ADET'}`, columnX[3] + 1.5, y + 4.8);
+        pdf.text(descriptionLines, columnX[4] + 1.5, y + 4.8);
 
-      pdf.setDrawColor(230, 230, 230);
-      pdf.rect(leftMargin, y, contentWidth, rowHeight);
-      for (let i = 1; i < columnX.length; i += 1) {
-        pdf.line(columnX[i], y, columnX[i], y + rowHeight);
-      }
+        pdf.setDrawColor(230, 230, 230);
+        pdf.rect(leftMargin, y, contentWidth, rowHeight);
+        for (let i = 1; i < columnX.length; i += 1) {
+          pdf.line(columnX[i], y, columnX[i], y + rowHeight);
+        }
 
-      y += rowHeight;
-    });
+        y += rowHeight;
+      });
+    };
+
+    panels.forEach((panel) => drawProductsTable(panel.name, panel.products));
+
+    const combinedProducts = new Map<string, typeof panels[number]['products'][number]>();
+    panels.forEach((panel) => panel.products.forEach((product) => {
+      const key = `${product.product}|${product.model}|${product.code}`;
+      const existing = combinedProducts.get(key);
+      combinedProducts.set(key, existing
+        ? { ...existing, quantity: existing.quantity + product.quantity }
+        : { ...product });
+    }));
+    drawProductsTable('Birlesik Toplam', Array.from(combinedProducts.values()));
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);

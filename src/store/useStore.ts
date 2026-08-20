@@ -10,6 +10,24 @@ interface StudioState {
   setConfig: (partial: Partial<LEDConfig>) => void;
   selectedScene?: string | null;
   setSelectedScene?: (scene: string | null) => void;
+  panels: PanelState[];
+  activePanelId: string;
+  addPanel: () => void;
+  selectPanel: (panelId: string) => void;
+  renamePanel: (panelId: string, name: string) => void;
+  removePanel: (panelId: string) => void;
+  setPanelScene: (panelId: string, scene: string | null) => void;
+  panelSelectionVisible: boolean;
+  clearPanelSelection: () => void;
+}
+
+export interface PanelState {
+  id: string;
+  name: string;
+  config: LEDConfig;
+  products: ProductItem[];
+  summary: SummaryData;
+  selectedScene: string | null;
 }
 
 const getPitchMeters = (pixelPitch: string): number => {
@@ -113,6 +131,14 @@ const getDerivedState = (config: LEDConfig) => {
 };
 
 const initialDerivedState = getDerivedState(defaultConfig);
+const initialPanel: PanelState = {
+  id: 'panel-1',
+  name: 'Ekran-1',
+  config: initialDerivedState.config,
+  products: initialDerivedState.products,
+  summary: initialDerivedState.summary,
+  selectedScene: 'billboard-large',
+};
 
 export const useStore = create<StudioState>((set) => ({
   config: initialDerivedState.config,
@@ -120,10 +146,71 @@ export const useStore = create<StudioState>((set) => ({
   topology: defaultTopology,
   summary: initialDerivedState.summary,
   selectedScene: 'billboard-large',
+  panels: [initialPanel],
+  activePanelId: initialPanel.id,
+  panelSelectionVisible: false,
   setConfig: (partial) =>
     set((state) => {
-      const nextConfig = { ...state.config, ...partial };
-      return getDerivedState(nextConfig);
+      const activePanel = state.panels.find((panel) => panel.id === state.activePanelId) ?? initialPanel;
+      const nextConfig = { ...activePanel.config, ...partial };
+      const derived = getDerivedState(nextConfig);
+      const panels = state.panels.map((panel) => panel.id === activePanel.id ? { ...panel, ...derived } : panel);
+      return { ...derived, panels };
     }),
-  setSelectedScene: (scene) => set(() => ({ selectedScene: scene })),
+  setSelectedScene: (scene) => set((state) => ({
+    selectedScene: scene,
+    panels: state.panels.map((panel) => panel.id === state.activePanelId ? { ...panel, selectedScene: scene } : panel),
+  })),
+  setPanelScene: (panelId, scene) => set((state) => ({
+    selectedScene: panelId === state.activePanelId ? scene : state.selectedScene,
+    panels: state.panels.map((panel) => panel.id === panelId ? { ...panel, selectedScene: scene } : panel),
+  })),
+  addPanel: () => set((state) => {
+    const nextNumber = state.panels.length + 1;
+    const panel: PanelState = {
+      id: `panel-${Date.now()}`,
+      name: `Ekran-${nextNumber}`,
+      config: { ...defaultConfig },
+      products: initialDerivedState.products,
+      summary: initialDerivedState.summary,
+      selectedScene: state.selectedScene ?? 'billboard-large',
+    };
+    return {
+      panels: [...state.panels, panel],
+      activePanelId: panel.id,
+      config: panel.config,
+      products: panel.products,
+      summary: panel.summary,
+      selectedScene: panel.selectedScene,
+    };
+  }),
+  selectPanel: (panelId) => set((state) => {
+    const panel = state.panels.find((item) => item.id === panelId);
+    if (!panel) return state;
+    return {
+      activePanelId: panel.id,
+      config: panel.config,
+      products: panel.products,
+      summary: panel.summary,
+      selectedScene: panel.selectedScene,
+      panelSelectionVisible: true,
+    };
+  }),
+  clearPanelSelection: () => set(() => ({ panelSelectionVisible: false })),
+  renamePanel: (panelId, name) => set((state) => ({
+    panels: state.panels.map((panel) => panel.id === panelId ? { ...panel, name: name.trim() || panel.name } : panel),
+  })),
+  removePanel: (panelId) => set((state) => {
+    if (state.panels.length === 1) return state;
+    const remainingPanels = state.panels.filter((panel) => panel.id !== panelId);
+    const activePanel = remainingPanels.find((panel) => panel.id === state.activePanelId) ?? remainingPanels[remainingPanels.length - 1];
+    return {
+      panels: remainingPanels,
+      activePanelId: activePanel.id,
+      config: activePanel.config,
+      products: activePanel.products,
+      summary: activePanel.summary,
+      selectedScene: activePanel.selectedScene,
+    };
+  }),
 }));

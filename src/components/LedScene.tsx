@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { useTexture } from '@react-three/drei';
 import { useStore } from '../store/useStore';
+import type { LEDConfig } from '../types';
 import { BufferGeometry, Float32BufferAttribute, Group, Plane, Vector3 } from 'three';
 
 interface LedSceneProps {
@@ -12,6 +13,7 @@ interface LedSceneProps {
   panelCorners?: [{ x: number; y: number }, { x: number; y: number }, { x: number; y: number }, { x: number; y: number }];
   onPanelDrag?: (delta: { x: number; y: number }) => void;
   panelMediaUrl?: string;
+  configOverride?: LEDConfig;
 }
 
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -136,8 +138,10 @@ export function LedScene({
   panelCorners,
   onPanelDrag,
   panelMediaUrl,
+  configOverride,
 }: LedSceneProps) {
-  const config = useStore((state) => state.config);
+  const storeConfig = useStore((state) => state.config);
+  const config = configOverride ?? storeConfig;
   const panelTexture = useTexture(panelMediaUrl || TRANSPARENT_PIXEL);
   const panelGroupRef = useRef<Group>(null);
   const dragRef = useRef<{ start: Vector3; origin: Vector3; lastDelta: Vector3 } | null>(null);
@@ -207,16 +211,16 @@ export function LedScene({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {perspectiveCorners ? (
+        {!panelMediaUrl && perspectiveCorners ? (
           <>
             <mesh geometry={createQuadGeometry(perspectiveCorners, 0.02)}>
               <meshStandardMaterial color="#8a8f98" metalness={0.35} roughness={0.45} />
             </mesh>
             <PerspectiveCabinetMesh columns={columns} rows={rows} corners={perspectiveCorners} />
           </>
-        ) : (
+        ) : !panelMediaUrl ? (
           <CabinetMesh columns={columns} rows={rows} width={config.cabinetWidth} height={config.cabinetHeight} />
-        )}
+        ) : null}
         {panelMediaUrl ? (
           <mesh geometry={perspectiveCorners ? quadGeometry(perspectiveCorners, 0.06) : undefined} position={perspectiveCorners ? undefined : [0, 0, 0.06]}>
             {perspectiveCorners ? null : <planeGeometry args={[columns * config.cabinetWidth, rows * config.cabinetHeight]} />}

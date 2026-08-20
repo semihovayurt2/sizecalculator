@@ -1,8 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 interface SceneSelectorProps {
   light?: boolean;
+  onAddScene?: () => void;
+  activePanelName?: string;
+  onEditPanelName?: () => void;
 }
 
 const OPTIONS = [
@@ -12,7 +16,7 @@ const OPTIONS = [
   { id: 'mobilcar', label: 'Mobil Araç' },
 ];
 
-export function SceneSelector({ light = false }: SceneSelectorProps) {
+export function SceneSelector({ light = false, onAddScene, activePanelName, onEditPanelName }: SceneSelectorProps) {
   const selected = useStore((s) => s.selectedScene);
   const setSelected = useStore((s) => s.setSelectedScene!);
   const [isOpen, setIsOpen] = useState(false);
@@ -33,7 +37,23 @@ export function SceneSelector({ light = false }: SceneSelectorProps) {
 
   return (
     <div ref={rootRef} className="relative z-40">
-      <label className="mb-2 block text-sm font-semibold text-blue-200/90">Sahne Seçimi</label>
+      <label className="mb-2 flex items-center justify-between gap-2 text-sm font-semibold text-blue-200/90">
+        <span>Sahne Seçimi</span>
+        {activePanelName ? (
+          <span className="flex min-w-0 items-center gap-1 text-[#60a5fa]">
+            <span className="truncate text-[11px] font-normal">{activePanelName}</span>
+            <button
+              type="button"
+              onClick={onEditPanelName}
+              className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-blue-200/60 transition hover:text-[#93c5fd]"
+              aria-label={`${activePanelName} adını düzenle`}
+              title="İsmi düzenle"
+            >
+              <Pencil className="h-2.5 w-2.5" />
+            </button>
+          </span>
+        ) : null}
+      </label>
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
@@ -51,12 +71,12 @@ export function SceneSelector({ light = false }: SceneSelectorProps) {
         <button
           type="button"
           onClick={() => {
-            setSelected(null);
             setIsOpen(false);
+            onAddScene?.();
           }}
-          className="block w-full px-3 py-3 text-left text-blue-200/90 transition hover:bg-white/10"
+          className="mx-2 my-1 block w-[calc(100%-1rem)] rounded-md border border-dashed border-[#60a5fa]/60 px-3 py-3 text-left font-semibold text-[#93c5fd] transition hover:bg-[#172033]"
         >
-          -- Sahne seçin --
+          Sahne Ekle
         </button>
         {OPTIONS.map((option) => {
           const isSelected = selected === option.id;
