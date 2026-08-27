@@ -5,6 +5,9 @@ import { useStore } from '../store/useStore';
 
 interface HeaderProps {
   onBackgroundSelected: (file: File) => void;
+  onPanelMediaSelected: (file: File) => void;
+  onClearPanelMedia: () => void;
+  hasPanelMedia: boolean;
   isProductPanelOpen: boolean;
   onToggleProductPanel: () => void;
 }
@@ -71,10 +74,14 @@ function StepperInput({ label, value, min, step, suffix, onChange }: StepperInpu
 
 export function Header({
   onBackgroundSelected,
+  onPanelMediaSelected,
+  onClearPanelMedia,
+  hasPanelMedia,
   isProductPanelOpen,
   onToggleProductPanel,
 }: HeaderProps) {
   const backgroundInputRef = React.useRef<HTMLInputElement | null>(null);
+  const mediaInputRef = React.useRef<HTMLInputElement | null>(null);
   const [panelAction, setPanelAction] = React.useState<'remove' | 'rename' | null>(null);
   const [renameValue, setRenameValue] = React.useState('');
   const config = useStore((s) => s.config);
@@ -122,14 +129,23 @@ export function Header({
   }, [autoHeightM, autoWidthM, config.height, config.width, setConfig]);
 
   return (
-    <header className="pointer-events-none absolute inset-y-0 left-0 z-30 w-[clamp(185px,20vw,245px)]">
-      <div className="pointer-events-auto flex h-full w-[clamp(185px,20vw,245px)] flex-col overflow-visible rounded-xl border border-white/10 bg-black/20 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] sm:px-4">
+    <header className="pointer-events-none absolute left-0 top-1/2 z-30 w-[clamp(185px,20vw,245px)] -translate-y-1/2">
+      <div className="pointer-events-auto flex h-[min(100dvh,66.6667vw)] max-h-[100dvh] w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-black/20 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] sm:px-4">
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-2">
           <div className="flex items-center gap-4">
             <img src={logoImage} alt="Dinamo logo" className="h-12 w-12 rounded-md object-contain" />
           </div>
 
           <div className="flex min-w-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={clearPanelSelection}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 text-blue-200/80 transition hover:border-[#60a5fa] hover:text-[#93c5fd]"
+              aria-label="Ana ekrana dön"
+              title="Ana ekrana dön"
+            >
+              <Home className="h-3.5 w-3.5" />
+            </button>
             <button
               type="button"
               onClick={addPanel}
@@ -161,16 +177,7 @@ export function Header({
 
         </div>
 
-        <div className="flex flex-wrap gap-1.5 border-b border-white/10 py-2">
-          <button
-            type="button"
-            onClick={clearPanelSelection}
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-blue-200/80 transition hover:border-[#60a5fa] hover:text-[#93c5fd]"
-            aria-label="Ana ekrana dön"
-            title="Ana ekrana dön"
-          >
-            <Home className="h-3.5 w-3.5" />
-          </button>
+        <div className="hidden flex-wrap gap-1.5 border-b border-white/10 py-2">
           {panels.map((panel) => (
             <button
               key={panel.id}
@@ -183,8 +190,8 @@ export function Header({
           ))}
         </div>
 
-        <div className="mt-2 min-h-0 flex-1 overflow-visible rounded-xl border border-white/10 bg-transparent">
-              <div className="flex min-w-0 flex-col gap-3 p-2 pt-2">
+        <div className="mt-2 min-h-0 flex-1 overflow-hidden rounded-xl border border-white/10 bg-transparent">
+              <div className="origin-top-left flex min-w-0 flex-col gap-2 p-1.5 pt-2 pb-14 scale-[var(--menu-content-scale)]" style={{ '--menu-content-scale': 'clamp(0.72, calc(100dvh / 760px), 1)', width: 'calc(100% / var(--menu-content-scale))' } as React.CSSProperties}>
                 <section className="min-w-0">
                   <div className="grid gap-2">
                     <div>
@@ -221,7 +228,7 @@ export function Header({
                   <h3 className="mb-2 text-center text-sm font-semibold text-blue-200/90">Display Configuration</h3>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Select Product</label>
+                      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Pixel Pitch</label>
                       <select
                         value={config.pixelPitch}
                         onChange={(e) => setConfig({ pixelPitch: e.target.value })}
@@ -242,14 +249,7 @@ export function Header({
                         <option>MX30</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Voltage</label>
-                      <select className={`${selectFieldClassName} h-8 text-[11px]`}>
-                        <option>220V</option>
-                        <option>110V</option>
-                      </select>
-                    </div>
-                    <div>
+                    <div className="col-span-2">
                       <label className="mb-1 block text-[11px] font-semibold text-blue-200/90">Panel Type</label>
                       <select
                         value={selectedPanelValue}
@@ -282,30 +282,30 @@ export function Header({
               </section>
 
               <section className="min-w-0 border-t border-white/10 pt-3">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px]">
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px]">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300/80">Teknik Bilgi</p>
-                  <div className="mt-1.5 space-y-1 text-blue-200/90">
-                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                  <div className="mt-1 space-y-0.5 text-blue-200/90">
+                    <div className="flex items-start justify-between gap-1 text-[10px] leading-tight">
                       <span>İnsan Silüeti Boyu</span>
                       <span className="text-right font-semibold">1.80 m</span>
                     </div>
-                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                    <div className="flex items-start justify-between gap-1 text-[10px] leading-tight">
                       <span>Ürün Çözünürlüğü</span>
                       <span className="text-right font-semibold">{summary.resolution} px</span>
                     </div>
-                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                    <div className="flex items-start justify-between gap-1 text-[10px] leading-tight">
                       <span>Yatay Panel (Sütun)</span>
                       <span className="text-right font-semibold">{summary.horizontalCabinets}</span>
                     </div>
-                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                    <div className="flex items-start justify-between gap-1 text-[10px] leading-tight">
                       <span>Dikey Panel (Satır)</span>
                       <span className="text-right font-semibold">{summary.verticalCabinets}</span>
                     </div>
-                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                    <div className="flex items-start justify-between gap-1 text-[10px] leading-tight">
                       <span>Toplam Panel Sayısı</span>
                       <span className="text-right font-semibold">{summary.totalCabinets}</span>
                     </div>
-                    <div className="flex items-start justify-between gap-1.5 text-[11px] leading-tight">
+                    <div className="flex items-start justify-between gap-1 text-[10px] leading-tight">
                       <span>Gerekli Elektrik Gücü</span>
                       <span className="text-right font-semibold">{formatNumber(summary.maximumPower, 2)} kW</span>
                     </div>
@@ -318,15 +318,44 @@ export function Header({
                   <button
                     type="button"
                     onClick={onToggleProductPanel}
-                    className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-[11px] font-semibold text-blue-200/90 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
+                    className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 text-[10px] font-semibold text-blue-200/90 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
                   >
                     Ürün Listesi
                   </button>
                 ) : null}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <input
+                    ref={mediaInputRef}
+                    id="panel-media-input"
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) onPanelMediaSelected(file);
+                      event.target.value = '';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="flex h-7 min-w-0 flex-1 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[10px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30"
+                    onClick={() => mediaInputRef.current?.click()}
+                  >
+                    Medya Yükle
+                  </button>
+                  <button
+                    type="button"
+                    className="flex h-7 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/20 px-2 text-[10px] font-semibold text-blue-200/90 shadow-[0_12px_28px_rgba(0,0,0,0.28)] backdrop-blur-[3px] transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={onClearPanelMedia}
+                    disabled={!hasPanelMedia}
+                  >
+                    Sil
+                  </button>
+                </div>
               </section>
 
+                </div>
             </div>
-          </div>
       </div>
 
       {panelAction ? (

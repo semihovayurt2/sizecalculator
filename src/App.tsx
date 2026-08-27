@@ -93,6 +93,9 @@ function App() {
 
         <Header
           onBackgroundSelected={onBackgroundSelected}
+          onPanelMediaSelected={onPanelMediaSelected}
+          onClearPanelMedia={clearPanelMedia}
+          hasPanelMedia={Boolean(panelMedia)}
           isProductPanelOpen={isProductPanelOpen}
           onToggleProductPanel={() => setIsProductPanelOpen((value) => !value)}
         />

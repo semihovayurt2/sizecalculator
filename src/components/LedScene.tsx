@@ -12,6 +12,7 @@ interface LedSceneProps {
   screenHeightRatio: number;
   panelCorners?: [{ x: number; y: number }, { x: number; y: number }, { x: number; y: number }, { x: number; y: number }];
   onPanelDrag?: (delta: { x: number; y: number }) => void;
+  onPanelInteract?: () => void;
   panelMediaUrl?: string;
   configOverride?: LEDConfig;
 }
@@ -137,6 +138,7 @@ export function LedScene({
   screenHeightRatio,
   panelCorners,
   onPanelDrag,
+  onPanelInteract,
   panelMediaUrl,
   configOverride,
 }: LedSceneProps) {
@@ -164,6 +166,7 @@ export function LedScene({
 
   const handlePointerDown = (event: any) => {
     event.stopPropagation();
+    onPanelInteract?.();
     if (!panelGroupRef.current) return;
     event.target.setPointerCapture?.(event.pointerId);
     dragRef.current = {
